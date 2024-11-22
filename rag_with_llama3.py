@@ -77,16 +77,17 @@ def write_file(file_path, content):
         return f"Error writing file: {e}"
 
 # Function to preprocess user input for LLM to decide actions
-def preprocess_prompt_for_rag(prompt):
+def preprocess_prompt_for_rag(user_prompt):
     """
-    Adds a system directive to the user's prompt to help the LLM determine if RAG is needed.
+    Prepares the user prompt with system-level directives for RAG integration.
     """
-    system_directive = (
-        "You are a code assistant with access to file reading and writing capabilities. "
-        "If the user asks for file operations, suggest the file path or content to read or write. "
-        "If no file operation is needed, proceed as usual."
-    )
-    return f"{system_directive}\n\nUser Prompt: {prompt}"
+    system_directive = """
+    You are a code assistant capable of reading and writing files. Always follow the specified response format for file-related actions:
+    1. To read a file, respond only with: "read file: <file_path>"
+    2. To write to a file, respond only with: "write file: <file_path>: <file_content>"
+    For non-file-related queries, generate a normal response without any file-related triggers.
+    """
+    return f"{system_directive}\n\nUser Prompt: {user_prompt}"
 
 # Function to handle LLM decision and execute RAG if needed
 def handle_llm_decision(user_prompt):
