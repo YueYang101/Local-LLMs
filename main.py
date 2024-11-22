@@ -30,7 +30,10 @@ def handle_llm_decision(user_prompt):
     if "read file" in response.lower():
         # Extract file path from response
         file_path = response.split("read file:")[-1].strip()
-        return read_file(file_path)
+        
+        # Check for folder reading flag
+        include_contents = "with contents" in response.lower()
+        return read_file(file_path, include_contents)
 
     elif "write file" in response.lower():
         # Extract file path and content
