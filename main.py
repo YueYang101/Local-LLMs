@@ -1,6 +1,6 @@
 import json
-from preprocess import preprocess_prompt_with_functions
-from functions import read_file, write_file, list_folder
+from LLM_interface.preprocess import preprocess_prompt_with_functions
+from Functions.functions import read_file, write_file, list_folder
 from LLM_interface.query_llm import query_ollama_stream
 
 # Load configuration
