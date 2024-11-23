@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI App</title>
+    <!-- Link the static CSS file -->
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Welcome to the File Interaction Assistant!</h1>
+    <form method="post" action="/handle-prompt/">
+        <label for="user_prompt">Enter a Prompt:</label>
+        <input type="text" id="user_prompt" name="user_prompt" required>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
