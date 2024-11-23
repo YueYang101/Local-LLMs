@@ -2,9 +2,10 @@ import json
 
 # Available functions for the LLM
 AVAILABLE_FUNCTIONS = {
-    "read_file": "Reads the contents of a file. Input: file_path (str).",
-    "write_file": "Writes or updates a file with given content. Input: file_path (str), content (str).",
-    "list_folder": "Lists the structure of a folder. Optionally reads the content of files. Input: folder_path (str), include_contents (bool).",
+    "handle_path": "Detects if the given path is a file or folder and returns a response to choose between reading a file or listing a folder structure.",
+    "read_file": "Reads the contents of a file if user specify it is a file.",
+    "write_file": "Writes or updates a file with given content.",
+    "list_folder": "Lists the tree structure of a folder if user specify it is a folder.",
 }
 
 def preprocess_prompt_with_functions(user_prompt):

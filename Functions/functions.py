@@ -2,24 +2,38 @@ import os
 from docx import Document
 import PyPDF2
 
-def read_file(file_path, include_contents=False):
+
+def handle_path(path):
     """
-    Reads the contents of a file or the structure of a folder from the given path.
-    Supports .docx (Word), .py (Python), and .pdf (PDF) files for file reading.
-    If the path is a folder, it lists all files and optionally reads their contents.
+    Detects if the given path is a file or folder and returns a response to choose
+    between reading a file or listing a folder structure.
+
+    Args:
+        path (str): The file or folder path.
+
+    Returns:
+        str: Response indicating the type of operation to perform.
+    """
+    if os.path.isfile(path):
+        return {"action": "read_file", "path": path}
+    elif os.path.isdir(path):
+        return {"action": "list_folder", "path": path}
+    else:
+        return {"error": f"{path} is neither a valid file nor a folder."}
+
+
+def read_file(file_path):
+    """
+    Reads the contents of a file.
+    Supports .docx (Word), .py (Python), and .pdf (PDF) files.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        str: The content of the file or an error message.
     """
     try:
-        if os.path.isdir(file_path):
-            folder_structure = {}
-            for root, _, files in os.walk(file_path):
-                for file in files:
-                    abs_path = os.path.join(root, file)
-                    if include_contents:
-                        folder_structure[abs_path] = read_file(abs_path)
-                    else:
-                        folder_structure[abs_path] = None
-            return folder_structure
-
         if file_path.endswith(".docx"):
             doc = Document(file_path)
             return "\n".join([para.text for para in doc.paragraphs])
@@ -41,9 +55,17 @@ def read_file(file_path, include_contents=False):
     except Exception as e:
         return f"Error reading file: {e}"
 
+
 def write_file(file_path, content):
     """
     Writes or updates a file with the specified content.
+
+    Args:
+        file_path (str): The path to the file.
+        content (str): The content to write.
+
+    Returns:
+        str: Success message or an error message.
     """
     try:
         if file_path.endswith(".docx"):
@@ -64,18 +86,77 @@ def write_file(file_path, content):
     except Exception as e:
         return f"Error writing file: {e}"
 
-def list_folder(folder_path, include_contents=False):
+
+# test code for the coming function
+# '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs'
+
+def list_folder(folder_path):
     """
-    Lists the structure of a folder. Optionally includes the contents of files.
+    Lists the structure of the last folder in the given folder path.
+    Recursively explores and includes only the subfolder contents under the given folder,
+    excluding hidden files/directories and specified system directories.
+
+    Args:
+        folder_path (str): The path to the folder.
+
+    Returns:
+        str: A tree-like string representation of the folder structure.
     """
+    # Set of directory names to exclude
+    exclude_dirs = {'__pycache__', '.git', '.venv', 'node_modules'}
+    # Set of file names to exclude
+    exclude_files = set()
+
+    def build_tree(path, level=0):
+        tree_structure = ""
+        indent = "    " * level  # Dynamic indentation for nesting
+
+        if os.path.isdir(path):
+            dir_name = os.path.basename(path)
+            if dir_name.startswith('.') or dir_name in exclude_dirs:
+                return ""  # Skip hidden or excluded directories
+            tree_structure += f"{indent}├── {dir_name}/\n"
+            # Iterate through the direct contents of the folder
+            for item in sorted(os.listdir(path)):  # Sort for consistent ordering
+                if item.startswith('.'):
+                    continue  # Skip hidden files and directories
+                item_path = os.path.join(path, item)
+                # Skip excluded directories and files
+                if os.path.isdir(item_path) and item in exclude_dirs:
+                    continue
+                if os.path.isfile(item_path) and item in exclude_files:
+                    continue
+                tree_structure += build_tree(item_path, level + 1)
+        else:
+            file_name = os.path.basename(path)
+            if file_name.startswith('.') or file_name in exclude_files:
+                return ""  # Skip hidden or excluded files
+            # Add files to the tree
+            tree_structure += f"{indent}├── {file_name}\n"
+
+        return tree_structure
+
+    # Validate the provided folder path
+    if not os.path.exists(folder_path):
+        return f"Error: {folder_path} does not exist."
+    if not os.path.isdir(folder_path):
+        return f"Error: {folder_path} is not a folder."
+
+    # Generate the tree structure for the provided folder path
     try:
-        folder_structure = {}
-        for root, _, files in os.walk(folder_path):
-            for file in files:
-                abs_path = os.path.join(root, file)
-                folder_structure[abs_path] = (
-                    read_file(abs_path) if include_contents else None
-                )
-        return folder_structure
+        # Start from the last folder in the path
+        last_folder_name = os.path.basename(os.path.abspath(folder_path))
+        tree = f"├── {last_folder_name}/\n"
+        for item in sorted(os.listdir(folder_path)):
+            if item.startswith('.'):
+                continue  # Skip hidden files and directories
+            item_path = os.path.join(folder_path, item)
+            # Skip excluded directories and files
+            if os.path.isdir(item_path) and item in exclude_dirs:
+                continue
+            if os.path.isfile(item_path) and item in exclude_files:
+                continue
+            tree += build_tree(item_path, level=1)
+        return tree.strip()
     except Exception as e:
         return f"Error reading folder: {e}"

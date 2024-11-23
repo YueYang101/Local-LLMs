@@ -1,6 +1,6 @@
 import json
 from LLM_interface.preprocess import preprocess_prompt_with_functions
-from Functions.functions import read_file, write_file, list_folder
+from Functions.functions import read_file, write_file, list_folder, handle_path
 from LLM_interface.query_llm import query_ollama_stream
 
 # Load configuration
@@ -11,22 +11,49 @@ try:
 except FileNotFoundError:
     raise Exception(f"Configuration file not found at {CONFIG_PATH}")
 
+# Model and API settings
 MODEL_NAME = config.get("model_name", "llama3.1:70b")
 API_URL = config.get("api_url", "http://localhost:11434/api/generate")
 
 def handle_llm_decision(user_prompt):
     """
     Handles the LLM decision-making process and executes the chosen function.
+
+    Args:
+        user_prompt (str): The user's input describing the task.
+
+    Returns:
+        str: The output of the chosen function or an error message.
     """
+    # Prepare the prompt with available functions for the LLM
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
+    
+    # Query the LLM
     llm_response = query_ollama_stream(API_URL, MODEL_NAME, enriched_prompt, stream=False)
 
     try:
+        # Parse the LLM's JSON response
         response_data = json.loads(llm_response)
         function_name = response_data.get("function")
         parameters = response_data.get("parameters", {})
 
-        if function_name == "read_file":
+        # Handle path-related requests directly
+        if function_name == "handle_path":
+            path = parameters.get("path")
+            action_response = handle_path(path)
+
+            if "action" in action_response:
+                if action_response["action"] == "read_file":
+                    return read_file(action_response["path"])
+                elif action_response["action"] == "list_folder":
+                    return list_folder(action_response["path"])
+                else:
+                    return "Error: Unknown action from handle_path."
+            else:
+                return action_response.get("error", "Error: Invalid response from handle_path.")
+
+        # Handle specific function requests
+        elif function_name == "read_file":
             return read_file(**parameters)
         elif function_name == "write_file":
             return write_file(**parameters)
@@ -40,11 +67,18 @@ def handle_llm_decision(user_prompt):
         return f"Error executing function: {e}"
 
 if __name__ == "__main__":
+    print("Welcome to the File Interaction Assistant!")
     while True:
+        # Get user input
         user_prompt = input("Enter your prompt (or 'exit' to quit): ").strip()
+        
+        # Exit condition
         if user_prompt.lower() == "exit":
+            print("Exiting the assistant. Goodbye!")
             break
-        print("\nProcessing...")
+
+        # Process the user's prompt and display the response
+        print("\nProcessing...\n")
         final_response = handle_llm_decision(user_prompt)
         print("\nFinal Response:")
         print(final_response)
