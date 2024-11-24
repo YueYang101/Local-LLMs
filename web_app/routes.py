@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import logging
-from Functions.LLM_decision import handle_llm_decision
+from Functions.LLM_decision import llm_decision
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -26,7 +26,7 @@ async def home(request: Request):
 async def handle_prompt(user_prompt: str = Form(...)):
     try:
         logging.info(f"Received user prompt: {user_prompt}")
-        result = handle_llm_decision(user_prompt)
+        result = llm_decision(user_prompt)
         logging.debug(f"Generated response: {result}")
 
         # Return the result in JSON format

@@ -102,7 +102,7 @@ def list_folder(folder_path: str) -> str:
         folder_path (str): The path to the folder.
 
     Returns:
-        str: A tree-like HTML string representation of the folder structure.
+        str: A tree-like plain text representation of the folder structure.
     """
     # Set of directory names to exclude
     exclude_dirs = {'__pycache__', '.git', '.venv', 'node_modules'}
@@ -110,15 +110,15 @@ def list_folder(folder_path: str) -> str:
     exclude_files = set()
 
     def build_tree(path, level=0):
-        html_structure = ""
-        indent = "&nbsp;&nbsp;&nbsp;&nbsp;" * level  # Dynamic indentation for nesting
+        plain_text_structure = ""
+        indent = "    " * level  # Dynamic indentation for nesting
         prefix = f"{indent}├── "  # Add the '├──' sign before each line
 
         if os.path.isdir(path):
-            dir_name = html.escape(os.path.basename(path))  # Escape HTML
+            dir_name = os.path.basename(path)  # Do not escape since plain text
             if dir_name.startswith('.') or dir_name in exclude_dirs:
                 return ""  # Skip hidden or excluded directories
-            html_structure += f"{prefix}{dir_name}/<br>"
+            plain_text_structure += f"{prefix}{dir_name}/\n"
             # Iterate through the direct contents of the folder
             for item in sorted(os.listdir(path)):  # Sort for consistent ordering
                 if item.startswith('.'):
@@ -129,29 +129,29 @@ def list_folder(folder_path: str) -> str:
                     continue
                 if os.path.isfile(item_path) and item in exclude_files:
                     continue
-                html_structure += build_tree(item_path, level + 1)
+                plain_text_structure += build_tree(item_path, level + 1)
         else:
-            file_name = html.escape(os.path.basename(path))  # Escape HTML
+            file_name = os.path.basename(path)  # Do not escape since plain text
             if file_name.startswith('.') or file_name in exclude_files:
                 return ""  # Skip hidden or excluded files
             # Add files to the tree
-            html_structure += f"{prefix}{file_name}<br>"
+            plain_text_structure += f"{prefix}{file_name}\n"
 
-        return html_structure
+        return plain_text_structure
 
     # Validate the provided folder path
     if not os.path.exists(folder_path):
         logging.error(f"Path does not exist: {folder_path}")
-        return f"<p>Error: {html.escape(folder_path)} does not exist.</p>"
+        return f"Error: {folder_path} does not exist."
     if not os.path.isdir(folder_path):
         logging.error(f"Path is not a folder: {folder_path}")
-        return f"<p>Error: {html.escape(folder_path)} is not a folder.</p>"
+        return f"Error: {folder_path} is not a folder."
 
     # Generate the tree structure for the provided folder path
     try:
         # Start from the last folder in the path
-        last_folder_name = html.escape(os.path.basename(os.path.abspath(folder_path)))
-        html_tree = f"├── {last_folder_name}/<br>"
+        last_folder_name = os.path.basename(os.path.abspath(folder_path))
+        plain_text_tree = f"├── {last_folder_name}/\n"
         for item in sorted(os.listdir(folder_path)):
             if item.startswith('.'):
                 continue  # Skip hidden files and directories
@@ -161,8 +161,8 @@ def list_folder(folder_path: str) -> str:
                 continue
             if os.path.isfile(item_path) and item in exclude_files:
                 continue
-            html_tree += build_tree(item_path, level=1)
-        return html_tree.strip()
+            plain_text_tree += build_tree(item_path, level=1)
+        return plain_text_tree.strip()
     except Exception as e:
         logging.error(f"Error reading folder: {e}")
-        return f"<p>Error reading folder: {e}</p>"
+        return f"Error reading folder: {e}"

@@ -14,7 +14,7 @@ def preprocess_prompt_with_functions(user_prompt):
     """
     system_directive = f"""
     You are a multi-functional assistant. You can:
-    1. Handle file and folder operations using the following functions:
+    1. Use the following functions:
     {json.dumps(AVAILABLE_FUNCTIONS, indent=2)}
     
     2. Answer general knowledge questions or queries. For such queries, respond directly with the answer as text.

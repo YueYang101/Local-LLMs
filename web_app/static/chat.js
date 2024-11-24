@@ -43,10 +43,41 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             if (DEBUG_MODE) console.debug("Response from server:", data);
 
             if (data.result) {
-                const botMessage = document.createElement("div");
+                // Create bot response container
+                const botResponseContainer = document.createElement("div");
+                botResponseContainer.classList.add("message-container");
+
+                // Add the bot's message inside a <pre> tag
+                const botMessage = document.createElement("pre");
                 botMessage.classList.add("message", "bot");
-                botMessage.innerHTML = data.result; // Render response as HTML
-                chatWindow.appendChild(botMessage);
+                botMessage.innerText = data.result; // Render response as plain text
+                botResponseContainer.appendChild(botMessage);
+
+                // Add a Copy button
+                const copyButton = document.createElement("button");
+                copyButton.classList.add("copy-button");
+                copyButton.innerText = "Copy";
+                copyButton.addEventListener("click", () => {
+                    navigator.clipboard.writeText(data.result).then(() => {
+                        copyButton.innerText = "Copied!";
+                        copyButton.classList.add("copied");
+                        setTimeout(() => {
+                            copyButton.innerText = "Copy";
+                            copyButton.classList.remove("copied");
+                        }, 2000);
+                    });
+                });
+
+                // Append copy button at the top-right of the bot message container
+                botResponseContainer.style.position = "relative";
+                copyButton.style.position = "absolute";
+                copyButton.style.top = "10px";
+                copyButton.style.right = "10px";
+
+                botResponseContainer.appendChild(copyButton);
+
+                // Append bot response container to the chat window
+                chatWindow.appendChild(botResponseContainer);
             } else if (data.error) {
                 throw new Error(data.error);
             }

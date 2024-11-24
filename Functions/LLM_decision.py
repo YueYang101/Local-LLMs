@@ -1,6 +1,6 @@
 import json
 from Functions.functions import read_file, write_file, list_folder, handle_path
-from LLM_interface.query_llm import query_ollama_stream
+from LLM_interface.query_llm import query_llm
 from LLM_interface.preprocess import preprocess_prompt_with_functions
 import logging
 
@@ -21,7 +21,7 @@ API_URL = config.get("api_url", "http://localhost:11434/api/generate")
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def handle_llm_decision(user_prompt: str):
+def llm_decision(user_prompt: str):
     """
     Handles the LLM decision-making process and executes the chosen function.
 
@@ -32,7 +32,7 @@ def handle_llm_decision(user_prompt: str):
         str: The output of the chosen function or a general text response.
     """
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
-    llm_response = query_ollama_stream(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+    llm_response = query_llm(API_URL, MODEL_NAME, enriched_prompt, stream=False)
 
     try:
         # Try to parse the response as JSON

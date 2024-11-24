@@ -19,7 +19,7 @@ def process_streamed_responses(response):
     return generated_text
 
 # Function to query the Llama API
-def query_ollama_stream(api_url, model_name, prompt, stream=False):
+def query_llm(api_url, model_name, prompt, stream=False):
     """
     Queries the API with a prompt and handles streamed responses for incremental updates.
     """
