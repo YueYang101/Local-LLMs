@@ -81,11 +81,6 @@ header {
     color: #f1f1f1; /* Light text color */
 }
 
-.message-container {
-    position: relative; /* Allows positioning for the copy button */
-    margin-bottom: 15px;
-}
-
 .message {
     margin-bottom: 10px;
     padding: 10px;
@@ -100,29 +95,36 @@ header {
 .message.bot {
     background-color: #444; /* Dark grey for bot */
     text-align: left;
-    padding: 10px;
-    border-radius: 8px;
 }
 
-/* Copy button styles */
-.copy-button {
-    padding: 5px 10px;
-    background-color: #000; /* Match button color */
-    color: #f1f1f1; /* Light text */
+form {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+input[type="text"] {
+    flex-grow: 1;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #555; /* Subtle border */
+    border-radius: 5px;
+    background-color: #1e1e2f; /* Match page background */
+    color: #f1f1f1; /* Light text color */
+}
+
+button {
+    padding: 10px;
+    background-color: #444; /* Match button styles */
+    color: #f1f1f1;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 0.9em;
 }
 
-.copy-button:hover {
+button:hover {
     background-color: #666; /* Lighter grey on hover */
-}
-
-.copy-button.copied {
-    background-color: #5cb85c; /* Green to indicate successful copy */
-    color: #fff;
-    font-weight: bold;
 }
 
 /* Progress bar styling */
@@ -153,4 +155,48 @@ header {
     100% {
         width: 100%;
     }
+}
+
+/* Response container styles */
+.response-container {
+    background-color: #1e1e2f;
+    border: 1px solid #444;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 10px;
+    color: #f1f1f1;
+    font-family: monospace;
+    overflow: hidden;
+}
+
+/* Header styling */
+.response-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.response-format {
+    font-weight: bold;
+    font-size: 1em;
+    text-transform: uppercase;
+    color: #f1f1f1;
+}
+
+/* Copy button styles */
+.copy-button {
+    padding: 5px 10px;
+    background-color: #000; /* Black background */
+    color: #f1f1f1; /* Light text */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+}
+
+.copy-button:hover {
+    background-color: #666;
 }

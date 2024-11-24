@@ -43,41 +43,42 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             if (DEBUG_MODE) console.debug("Response from server:", data);
 
             if (data.result) {
-                // Create bot response container
-                const botResponseContainer = document.createElement("div");
-                botResponseContainer.classList.add("message-container");
+                // Create response container
+                const responseContainer = document.createElement("div");
+                responseContainer.classList.add("response-container");
 
-                // Add the bot's message inside a <pre> tag
-                const botMessage = document.createElement("pre");
-                botMessage.classList.add("message", "bot");
-                botMessage.innerText = data.result; // Render response as plain text
-                botResponseContainer.appendChild(botMessage);
+                // Add response header with format and copy button
+                const responseHeader = document.createElement("div");
+                responseHeader.classList.add("response-header");
 
-                // Add a Copy button
+                const formatLabel = document.createElement("span");
+                formatLabel.classList.add("response-format");
+                formatLabel.innerText = "Response"; // Static format for now
+                responseHeader.appendChild(formatLabel);
+
                 const copyButton = document.createElement("button");
                 copyButton.classList.add("copy-button");
-                copyButton.innerText = "Copy";
+                copyButton.innerHTML = `<i class="icon-copy"></i> Copy`;
+                copyButton.title = "Copy to clipboard";
                 copyButton.addEventListener("click", () => {
                     navigator.clipboard.writeText(data.result).then(() => {
-                        copyButton.innerText = "Copied!";
                         copyButton.classList.add("copied");
                         setTimeout(() => {
-                            copyButton.innerText = "Copy";
                             copyButton.classList.remove("copied");
                         }, 2000);
                     });
                 });
+                responseHeader.appendChild(copyButton);
+                responseContainer.appendChild(responseHeader);
 
-                // Append copy button at the top-right of the bot message container
-                botResponseContainer.style.position = "relative";
-                copyButton.style.position = "absolute";
-                copyButton.style.top = "10px";
-                copyButton.style.right = "10px";
+                // Add response content
+                const responseContent = document.createElement("pre");
+                responseContent.classList.add("response-content");
+                responseContent.innerText = data.result; // Render as plain text
+                responseContainer.appendChild(responseContent);
 
-                botResponseContainer.appendChild(copyButton);
-
-                // Append bot response container to the chat window
-                chatWindow.appendChild(botResponseContainer);
+                // Append to chat window
+                chatWindow.appendChild(responseContainer);
             } else if (data.error) {
                 throw new Error(data.error);
             }
