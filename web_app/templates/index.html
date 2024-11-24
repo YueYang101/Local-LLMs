@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FastAPI App</title>
-    <!-- Link the static CSS file -->
+    <title>Chat App</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Welcome to the File Interaction Assistant!</h1>
-    <form method="post" action="/handle-prompt/">
-        <label for="user_prompt">Enter a Prompt:</label>
-        <input type="text" id="user_prompt" name="user_prompt" required>
-        <button type="submit">Submit</button>
-    </form>
+    <div class="chat-container">
+        <header>
+            <h1>Chat with LLM</h1>
+        </header>
+        <div id="chat-window" class="chat-window">
+            <!-- Chat messages will appear here -->
+        </div>
+        <form id="chat-form">
+            <input type="text" id="user-input" name="user_input" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <script src="/static/chat.js"></script>
 </body>
 </html>
