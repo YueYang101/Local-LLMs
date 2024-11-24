@@ -13,10 +13,14 @@ def preprocess_prompt_with_functions(user_prompt):
     Prepares the user prompt with a list of available functions for the LLM.
     """
     system_directive = f"""
-    You are a code assistant with access to the following functions:
+    You are a multi-functional assistant. You can:
+    1. Handle file and folder operations using the following functions:
     {json.dumps(AVAILABLE_FUNCTIONS, indent=2)}
     
-    Your task is to decide which function to use based on the user's input. Respond only with the function name and its parameters in JSON format. 
+    2. Answer general knowledge questions or queries. For such queries, respond directly with the answer as text.
+    
+    Your task is to decide whether the user's input requires the use of one of the provided functions or if it is a general question.
+    - For file or folder operations, respond only with the function name and its parameters in JSON format. 
     For example:
     {{
         "function": "read_file",
@@ -24,5 +28,6 @@ def preprocess_prompt_with_functions(user_prompt):
             "file_path": "/path/to/file"
         }}
     }}
+    - For general questions, respond directly with the answer in plain text.
     """
     return f"{system_directive}\n\nUser Prompt: {user_prompt}"

@@ -1,81 +1,158 @@
+/* General styles */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    background-color: #1e1e2f; /* Dark grey background */
+    color: #f1f1f1; /* Light text color for contrast */
     display: flex;
-    justify-content: center;
-    align-items: center;
     height: 100vh;
-    background-color: #f9f9f9;
 }
 
+/* Container layout */
+.container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* Sidebar styles */
+.sidebar {
+    background-color: #2b2b3c; /* Slightly lighter dark grey for sidebar */
+    color: #f1f1f1; /* White text */
+    width: 25%;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    border-right: 1px solid #444; /* Subtle border for separation */
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    font-size: 1.5em;
+    color: #f1f1f1; /* White heading */
+}
+
+#chat-list {
+    margin-top: 20px;
+}
+
+#chat-list button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #444; /* Dark button */
+    color: #f1f1f1; /* Light text */
+    border: 1px solid #555; /* Subtle border */
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#chat-list button:hover {
+    background-color: #666; /* Lighter grey on hover */
+}
+
+/* Chat container styles */
 .chat-container {
-    width: 400px;
-    max-width: 90%;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    width: 75%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 header {
-    background: #007BFF;
-    color: white;
+    background-color: #2b2b3c; /* Match sidebar color */
+    color: #f1f1f1;
+    padding: 15px;
     text-align: center;
-    padding: 10px;
-    font-size: 1.2rem;
+    font-size: 1.8em;
+    border-bottom: 1px solid #444; /* Subtle border */
 }
 
 .chat-window {
+    flex-grow: 1;
+    background-color: #262636; /* Slightly lighter grey for chat window */
+    border: 1px solid #444;
+    margin: 10px 0;
+    overflow-y: auto;
     padding: 10px;
-    height: 300px;
-    overflow-y: scroll;
-    border-bottom: 1px solid #ddd;
-    background: #f4f4f4;
-}
-
-.chat-window .message {
-    margin: 5px 0;
-    padding: 5px;
     border-radius: 5px;
+    color: #f1f1f1; /* Light text color */
 }
 
-.chat-window .message.user {
-    background: #007BFF;
-    color: white;
+.message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.message.user {
+    background-color: #3b3b4f; /* Darker shade for user */
     text-align: right;
 }
 
-.chat-window .message.bot {
-    background: #e0e0e0;
-    color: black;
+.message.bot {
+    background-color: #444; /* Dark grey for bot */
     text-align: left;
 }
 
 form {
     display: flex;
-    padding: 10px;
-    gap: 10px;
-    background: #f1f1f1;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
 }
 
-form input[type="text"] {
-    flex: 1;
+input[type="text"] {
+    flex-grow: 1;
     padding: 10px;
-    border: 1px solid #ddd;
+    margin-right: 10px;
+    border: 1px solid #555; /* Subtle border */
     border-radius: 5px;
-    font-size: 1rem;
+    background-color: #1e1e2f; /* Match page background */
+    color: #f1f1f1; /* Light text color */
 }
 
-form button {
+button {
     padding: 10px;
-    background: #007BFF;
-    color: white;
+    background-color: #444; /* Match button styles */
+    color: #f1f1f1;
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
 
-form button:hover {
-    background: #0056b3;
+button:hover {
+    background-color: #666; /* Lighter grey on hover */
+}
+
+/* Progress bar styling */
+.progress-bar-container {
+    width: 100%;
+    margin: 10px 0;
+    background-color: #1e1e2f; /* Match background color */
+    border: 1px solid #444; /* Subtle border */
+    border-radius: 4px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background-color: #5cb85c; /* Green for progress */
+    animation: progressBarAnimation 2s linear infinite;
+}
+
+@keyframes progressBarAnimation {
+    0% {
+        width: 0%;
+    }
+    50% {
+        width: 50%;
+    }
+    100% {
+        width: 100%;
+    }
 }

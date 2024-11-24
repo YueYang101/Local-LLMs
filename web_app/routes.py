@@ -1,63 +1,36 @@
 from fastapi import APIRouter, HTTPException, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+import logging
 from Functions.LLM_decision import handle_llm_decision
 
-# Initialize the router
+# Set up logging
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Initialize router
 router = APIRouter()
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory="web_app/templates")
 
+# Mount static files
+router.mount("/static", StaticFiles(directory="web_app/static"), name="static")
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """
-    Render the homepage with a form for inputting user prompts.
-    """
+    logging.info("Rendering the homepage.")
     return templates.TemplateResponse("index.html", {"request": request})
 
-@router.post("/handle-prompt/", response_class=HTMLResponse)
+@router.post("/handle-prompt/", response_class=JSONResponse)
 async def handle_prompt(user_prompt: str = Form(...)):
-    """
-    Handle a user prompt and render the response as HTML.
-    """
     try:
+        logging.info(f"Received user prompt: {user_prompt}")
         result = handle_llm_decision(user_prompt)
+        logging.debug(f"Generated response: {result}")
 
-        html_content = f"""
-        <html>
-            <head>
-                <title>LLM Response</title>
-                <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        line-height: 1.6;
-                        margin: 20px;
-                    }}
-                    pre {{
-                        background-color: #f4f4f4;
-                        padding: 10px;
-                        border: 1px solid #ddd;
-                        overflow-x: auto;
-                    }}
-                    a {{
-                        text-decoration: none;
-                        color: #007BFF;
-                    }}
-                    a:hover {{
-                        text-decoration: underline;
-                    }}
-                </style>
-            </head>
-            <body>
-                <h1>LLM Response</h1>
-                <pre>{result}</pre>
-                <a href="/">Back to Home</a>
-            </body>
-        </html>
-        """
-        return HTMLResponse(content=html_content)
-
+        # Return the result in JSON format
+        return JSONResponse(content={"result": result})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error processing prompt: {e}")
+        return JSONResponse(content={"error": f"Unable to process your request: {e}"}, status_code=500)

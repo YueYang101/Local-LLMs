@@ -1,6 +1,8 @@
 import os
 from docx import Document
 import PyPDF2
+import html
+import logging
 
 
 def handle_path(path):
@@ -90,7 +92,7 @@ def write_file(file_path, content):
 # test code for the coming function
 # '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs'
 
-def list_folder(folder_path):
+def list_folder(folder_path: str) -> str:
     """
     Lists the structure of the last folder in the given folder path.
     Recursively explores and includes only the subfolder contents under the given folder,
@@ -113,7 +115,7 @@ def list_folder(folder_path):
         prefix = f"{indent}├── "  # Add the '├──' sign before each line
 
         if os.path.isdir(path):
-            dir_name = os.path.basename(path)
+            dir_name = html.escape(os.path.basename(path))  # Escape HTML
             if dir_name.startswith('.') or dir_name in exclude_dirs:
                 return ""  # Skip hidden or excluded directories
             html_structure += f"{prefix}{dir_name}/<br>"
@@ -129,7 +131,7 @@ def list_folder(folder_path):
                     continue
                 html_structure += build_tree(item_path, level + 1)
         else:
-            file_name = os.path.basename(path)
+            file_name = html.escape(os.path.basename(path))  # Escape HTML
             if file_name.startswith('.') or file_name in exclude_files:
                 return ""  # Skip hidden or excluded files
             # Add files to the tree
@@ -139,14 +141,16 @@ def list_folder(folder_path):
 
     # Validate the provided folder path
     if not os.path.exists(folder_path):
-        return f"<p>Error: {folder_path} does not exist.</p>"
+        logging.error(f"Path does not exist: {folder_path}")
+        return f"<p>Error: {html.escape(folder_path)} does not exist.</p>"
     if not os.path.isdir(folder_path):
-        return f"<p>Error: {folder_path} is not a folder.</p>"
+        logging.error(f"Path is not a folder: {folder_path}")
+        return f"<p>Error: {html.escape(folder_path)} is not a folder.</p>"
 
     # Generate the tree structure for the provided folder path
     try:
         # Start from the last folder in the path
-        last_folder_name = os.path.basename(os.path.abspath(folder_path))
+        last_folder_name = html.escape(os.path.basename(os.path.abspath(folder_path)))
         html_tree = f"├── {last_folder_name}/<br>"
         for item in sorted(os.listdir(folder_path)):
             if item.startswith('.'):
@@ -160,4 +164,5 @@ def list_folder(folder_path):
             html_tree += build_tree(item_path, level=1)
         return html_tree.strip()
     except Exception as e:
+        logging.error(f"Error reading folder: {e}")
         return f"<p>Error reading folder: {e}</p>"
