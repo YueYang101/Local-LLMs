@@ -92,14 +92,21 @@ def write_file(file_path, content):
 # test code for the coming function
 # '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs'
 
-def list_folder(folder_path: str) -> str:
+import os
+import logging
+import urllib.parse
+
+
+def list_folder(folder_path: str, enable_preview: bool = True) -> str:
     """
     Lists the structure of the last folder in the given folder path.
     Recursively explores and includes only the subfolder contents under the given folder,
     excluding hidden files/directories and specified system directories.
+    Adds hyperlinks for files if previewing is enabled.
 
     Args:
         folder_path (str): The path to the folder.
+        enable_preview (bool): Whether to generate hyperlinks for file previews.
 
     Returns:
         str: A tree-like plain text representation of the folder structure.
@@ -115,7 +122,7 @@ def list_folder(folder_path: str) -> str:
         prefix = f"{indent}├── "  # Add the '├──' sign before each line
 
         if os.path.isdir(path):
-            dir_name = os.path.basename(path)  # Do not escape since plain text
+            dir_name = os.path.basename(path)
             if dir_name.startswith('.') or dir_name in exclude_dirs:
                 return ""  # Skip hidden or excluded directories
             plain_text_structure += f"{prefix}{dir_name}/\n"
@@ -131,11 +138,17 @@ def list_folder(folder_path: str) -> str:
                     continue
                 plain_text_structure += build_tree(item_path, level + 1)
         else:
-            file_name = os.path.basename(path)  # Do not escape since plain text
+            file_name = os.path.basename(path)
             if file_name.startswith('.') or file_name in exclude_files:
                 return ""  # Skip hidden or excluded files
-            # Add files to the tree
-            plain_text_structure += f"{prefix}{file_name}\n"
+
+            if enable_preview:
+                # Add hyperlinks for files to enable previewing
+                encoded_path = urllib.parse.quote(path)  # Encode the file path for URLs
+                plain_text_structure += f'{prefix}[{file_name}](javascript:void(0);" class="file-link" data-file-path="{encoded_path}")\n'
+            else:
+                # Add plain text for files
+                plain_text_structure += f"{prefix}{file_name}\n"
 
         return plain_text_structure
 
@@ -149,7 +162,6 @@ def list_folder(folder_path: str) -> str:
 
     # Generate the tree structure for the provided folder path
     try:
-        # Start from the last folder in the path
         last_folder_name = os.path.basename(os.path.abspath(folder_path))
         plain_text_tree = f"├── {last_folder_name}/\n"
         for item in sorted(os.listdir(folder_path)):

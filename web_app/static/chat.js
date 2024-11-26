@@ -47,19 +47,17 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
                 const responseContainer = document.createElement("div");
                 responseContainer.classList.add("response-container");
 
-                // Add response header with format and copy button
-                const responseHeader = document.createElement("div");
-                responseHeader.classList.add("response-header");
+                // Add response content
+                const responseContent = document.createElement("pre");
+                responseContent.classList.add("response-content");
+                responseContent.innerText = data.result; // Render as plain text
+                responseContainer.appendChild(responseContent);
 
-                const formatLabel = document.createElement("span");
-                formatLabel.classList.add("response-format");
-                formatLabel.innerText = "Response"; // Static format for now
-                responseHeader.appendChild(formatLabel);
-
+                // Add a Copy button
                 const copyButton = document.createElement("button");
                 copyButton.classList.add("copy-button");
-                copyButton.innerHTML = `<i class="icon-copy"></i> Copy`;
                 copyButton.title = "Copy to clipboard";
+                copyButton.innerHTML = `<i class="icon-copy"></i> Copy`;
                 copyButton.addEventListener("click", () => {
                     navigator.clipboard.writeText(data.result).then(() => {
                         copyButton.classList.add("copied");
@@ -68,14 +66,12 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
                         }, 2000);
                     });
                 });
-                responseHeader.appendChild(copyButton);
-                responseContainer.appendChild(responseHeader);
 
-                // Add response content
-                const responseContent = document.createElement("pre");
-                responseContent.classList.add("response-content");
-                responseContent.innerText = data.result; // Render as plain text
-                responseContainer.appendChild(responseContent);
+                // Position the copy button on the upper-right corner
+                copyButton.style.position = "absolute";
+                copyButton.style.right = "10px";
+                copyButton.style.top = "10px";
+                responseContainer.appendChild(copyButton);
 
                 // Append to chat window
                 chatWindow.appendChild(responseContainer);

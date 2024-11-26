@@ -20,7 +20,7 @@ body {
 .sidebar {
     background-color: #2b2b3c; /* Slightly lighter dark grey for sidebar */
     color: #f1f1f1; /* White text */
-    width: 25%;
+    width: 20%; /* Reduced width for sidebar */
     padding: 20px;
     box-sizing: border-box;
     overflow-y: auto;
@@ -54,20 +54,11 @@ body {
 
 /* Chat container styles */
 .chat-container {
-    width: 75%;
+    width: 80%; /* Adjusted width */
     display: flex;
     flex-direction: column;
     padding: 20px;
     box-sizing: border-box;
-}
-
-header {
-    background-color: #2b2b3c; /* Match sidebar color */
-    color: #f1f1f1;
-    padding: 15px;
-    text-align: center;
-    font-size: 1.8em;
-    border-bottom: 1px solid #444; /* Subtle border */
 }
 
 .chat-window {
@@ -167,36 +158,29 @@ button:hover {
     color: #f1f1f1;
     font-family: monospace;
     overflow: hidden;
-}
-
-/* Header styling */
-.response-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-}
-
-.response-format {
-    font-weight: bold;
-    font-size: 1em;
-    text-transform: uppercase;
-    color: #f1f1f1;
+    position: relative;
 }
 
 /* Copy button styles */
 .copy-button {
     padding: 5px 10px;
-    background-color: #000; /* Black background */
+    background-color: #000; /* Full black button */
     color: #f1f1f1; /* Light text */
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 0.9em;
-    display: flex;
-    align-items: center;
+    position: absolute;
+    right: 10px; /* Right-align */
+    top: 10px; /* Top-align */
 }
 
 .copy-button:hover {
-    background-color: #666;
+    background-color: #666; /* Lighter grey on hover */
+}
+
+.copy-button.copied {
+    background-color: #5cb85c; /* Green to indicate successful copy */
+    color: #fff;
+    font-weight: bold;
 }
