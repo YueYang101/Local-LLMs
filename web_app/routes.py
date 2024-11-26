@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 import logging
 from Functions.LLM_decision import llm_decision
 from Functions.functions import read_file, list_folder
+import os
 
 # Set up logging
 logging.basicConfig(
@@ -82,7 +83,7 @@ async def preview_file(path: str = Query(...)):
         return HTMLResponse(content=f"<p>Error: Unable to preview file: {e}</p>", status_code=500)
 
 
-@router.get("/list-folder/", response_class=HTMLResponse)
+@router.get("/list-folder/", response_class=JSONResponse)
 async def list_folder_route(folder_path: str = Query(...)):
     """
     Endpoint to list the folder structure with hyperlinks for files.
@@ -91,16 +92,18 @@ async def list_folder_route(folder_path: str = Query(...)):
         folder_path (str): The path to the folder.
 
     Returns:
-        HTMLResponse: The folder structure in HTML format.
+        JSONResponse: The folder structure in JSON format.
     """
     logging.info(f"Listing folder structure for: {folder_path}")
     try:
         folder_structure = list_folder(folder_path, enable_preview=True)
         logging.debug(f"Generated folder structure HTML: {folder_structure}")
-        return HTMLResponse(content=folder_structure, status_code=200)
+        return JSONResponse(content={"folder_structure": folder_structure})
     except Exception as e:
         logging.error(f"Error listing folder: {e}")
-        return HTMLResponse(content=f"<p>Error: Unable to list folder: {e}</p>", status_code=500)
+        return JSONResponse(
+            content={"error": f"Unable to list folder: {e}"}, status_code=500
+        )
 
 
 @router.post("/upload-file/", response_class=JSONResponse)

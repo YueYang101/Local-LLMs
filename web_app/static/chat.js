@@ -1,5 +1,6 @@
 const DEBUG_MODE = true;
 
+// Attach event listener to the form
 document.getElementById("chat-form").addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -39,20 +40,25 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
         });
 
         if (response.ok) {
-            const data = await response.json();
-            if (DEBUG_MODE) console.debug("Response from server:", data);
+            const jsonResponse = await response.json(); // Parse JSON response
+            if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
 
-            if (data.result) {
-                // Render HTML response content directly
+            if (jsonResponse.result) {
+                const result = jsonResponse.result;
+
+                // Render the HTML response content
                 const responseContainer = document.createElement("div");
                 responseContainer.classList.add("response-container");
-                responseContainer.innerHTML = data.result; // Insert raw HTML
+                responseContainer.innerHTML = result; // Insert result as HTML
                 chatWindow.appendChild(responseContainer);
 
                 // Reattach event listeners for dynamically added links
                 attachFileLinkListeners();
-            } else if (data.error) {
-                throw new Error(data.error);
+            } else if (jsonResponse.error) {
+                const errorMessage = document.createElement("div");
+                errorMessage.classList.add("message", "bot");
+                errorMessage.innerText = "Error: " + jsonResponse.error;
+                chatWindow.appendChild(errorMessage);
             }
         } else {
             throw new Error(`Server returned status ${response.status}`);
@@ -73,7 +79,7 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     }
 });
 
-// Function to attach event listeners to file links
+// Function to attach event listeners to dynamically added file links
 function attachFileLinkListeners() {
     document.querySelectorAll(".file-link").forEach((link) => {
         link.addEventListener("click", async (event) => {
@@ -84,10 +90,12 @@ function attachFileLinkListeners() {
                 const response = await fetch(`/preview/?path=${encodeURIComponent(filePath)}`);
                 if (response.ok) {
                     const content = await response.text();
+                    if (DEBUG_MODE) console.debug("File content:", content);
 
-                    // Display file content in modal
+                    // Display file content in a modal
                     showModal(content);
                 } else {
+                    console.error("Failed to load file content. Status:", response.status);
                     alert("Failed to load file content.");
                 }
             } catch (error) {
@@ -98,7 +106,7 @@ function attachFileLinkListeners() {
     });
 }
 
-// Function to display file content in a modal
+// Function to display a modal with file content
 function showModal(content) {
     const modal = document.createElement("div");
     modal.classList.add("modal");
@@ -114,6 +122,8 @@ function showModal(content) {
     modal.querySelector(".close-button").addEventListener("click", () => {
         modal.remove();
     });
+
+    if (DEBUG_MODE) console.debug("Modal displayed successfully.");
 }
 
 // Close modal event listener for a fixed modal (if needed)
