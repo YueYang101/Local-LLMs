@@ -43,38 +43,14 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             if (DEBUG_MODE) console.debug("Response from server:", data);
 
             if (data.result) {
-                // Create response container
+                // Render HTML response content directly
                 const responseContainer = document.createElement("div");
                 responseContainer.classList.add("response-container");
-
-                // Add response content
-                const responseContent = document.createElement("pre");
-                responseContent.classList.add("response-content");
-                responseContent.innerText = data.result; // Render as plain text
-                responseContainer.appendChild(responseContent);
-
-                // Add a Copy button
-                const copyButton = document.createElement("button");
-                copyButton.classList.add("copy-button");
-                copyButton.title = "Copy to clipboard";
-                copyButton.innerHTML = `<i class="icon-copy"></i> Copy`;
-                copyButton.addEventListener("click", () => {
-                    navigator.clipboard.writeText(data.result).then(() => {
-                        copyButton.classList.add("copied");
-                        setTimeout(() => {
-                            copyButton.classList.remove("copied");
-                        }, 2000);
-                    });
-                });
-
-                // Position the copy button on the upper-right corner
-                copyButton.style.position = "absolute";
-                copyButton.style.right = "10px";
-                copyButton.style.top = "10px";
-                responseContainer.appendChild(copyButton);
-
-                // Append to chat window
+                responseContainer.innerHTML = data.result; // Insert raw HTML
                 chatWindow.appendChild(responseContainer);
+
+                // Reattach event listeners for dynamically added links
+                attachFileLinkListeners();
             } else if (data.error) {
                 throw new Error(data.error);
             }
@@ -95,4 +71,60 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
         // Scroll to the bottom of the chat window
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
+});
+
+// Function to attach event listeners to file links
+function attachFileLinkListeners() {
+    document.querySelectorAll(".file-link").forEach((link) => {
+        link.addEventListener("click", async (event) => {
+            event.preventDefault();
+            const filePath = link.dataset.filePath;
+
+            try {
+                const response = await fetch(`/preview/?path=${encodeURIComponent(filePath)}`);
+                if (response.ok) {
+                    const content = await response.text();
+
+                    // Display file content in modal
+                    showModal(content);
+                } else {
+                    alert("Failed to load file content.");
+                }
+            } catch (error) {
+                console.error("Error fetching file content:", error);
+                alert("Error fetching file content.");
+            }
+        });
+    });
+}
+
+// Function to display file content in a modal
+function showModal(content) {
+    const modal = document.createElement("div");
+    modal.classList.add("modal");
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <pre>${content}</pre>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Add event listener to close the modal
+    modal.querySelector(".close-button").addEventListener("click", () => {
+        modal.remove();
+    });
+}
+
+// Close modal event listener for a fixed modal (if needed)
+document.getElementById("close-modal")?.addEventListener("click", () => {
+    const modal = document.getElementById("file-preview-modal");
+    if (modal) {
+        modal.style.display = "none";
+    }
+});
+
+// Log uncaught errors in JavaScript for debugging
+window.addEventListener("error", (event) => {
+    if (DEBUG_MODE) console.error("Uncaught error:", event.message);
 });
