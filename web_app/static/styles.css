@@ -70,6 +70,8 @@ body {
     padding: 10px;
     border-radius: 5px;
     color: #f1f1f1; /* Light text color */
+    font-family: monospace; /* Monospace for consistent plain text display */
+    white-space: pre-wrap; /* Preserve newlines and whitespace */
 }
 
 .message {
@@ -88,6 +90,7 @@ body {
     text-align: left;
 }
 
+/* Updated input field for larger text box */
 form {
     display: flex;
     align-items: center;
@@ -97,21 +100,25 @@ form {
 
 input[type="text"] {
     flex-grow: 1;
-    padding: 10px;
+    padding: 15px; /* Increase padding for larger height */
     margin-right: 10px;
     border: 1px solid #555; /* Subtle border */
     border-radius: 5px;
     background-color: #1e1e2f; /* Match page background */
     color: #f1f1f1; /* Light text color */
+    font-size: 16px; /* Larger font size for better readability */
+    height: 50px; /* Increase the height for a larger input box */
 }
 
+/* Submit button styling */
 button {
-    padding: 10px;
+    padding: 15px; /* Match the input field height */
     background-color: #444; /* Match button styles */
     color: #f1f1f1;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    font-size: 16px; /* Match input field font size */
 }
 
 button:hover {
@@ -148,17 +155,17 @@ button:hover {
     }
 }
 
-/* Response container styles */
+/* Plain text response container */
 .response-container {
-    background-color: #1e1e2f;
-    border: 1px solid #444;
+    background-color: #1e1e2f; /* Match chat window background */
+    border: 1px solid #444; /* Subtle border */
     border-radius: 5px;
     margin-bottom: 10px;
     padding: 10px;
-    color: #f1f1f1;
-    font-family: monospace;
-    overflow: hidden;
-    position: relative;
+    color: #f1f1f1; /* Light text color */
+    font-family: monospace; /* Monospace for plain text display */
+    white-space: pre-wrap; /* Preserve formatting for plain text */
+    overflow-x: auto; /* Allow horizontal scrolling for long lines */
 }
 
 /* Copy button styles */
@@ -183,46 +190,4 @@ button:hover {
     background-color: #5cb85c; /* Green to indicate successful copy */
     color: #fff;
     font-weight: bold;
-}
-
-/* Popup window styles */
-.popup-window {
-    position: fixed;
-    top: 10%;
-    left: 10%;
-    width: 80%;
-    height: 80%;
-    background-color: #1e1e2f;
-    border: 2px solid #444;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    overflow: auto;
-    z-index: 1000;
-    padding: 20px;
-    color: #f1f1f1;
-}
-
-.popup-close-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: #444;
-    color: #f1f1f1;
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    font-size: 1.2em;
-    text-align: center;
-    cursor: pointer;
-}
-
-.popup-close-button:hover {
-    background-color: #666;
-}
-
-.popup-content {
-    white-space: pre-wrap;
-    font-family: monospace;
-    padding: 10px;
 }

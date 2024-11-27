@@ -20,7 +20,7 @@
         <!-- Main Chat Window -->
         <div class="chat-container">
             <div id="chat-window" class="chat-window">
-                <!-- Chat messages will appear here -->
+                <!-- Chat messages and plain text responses will appear here -->
             </div>
             <form id="chat-form">
                 <input type="text" id="user-input" name="user_input" placeholder="Type your message..." required>
@@ -29,15 +29,16 @@
         </div>
     </div>
 
-    <!-- Modal for file preview -->
-    <div id="file-preview-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <button id="close-modal" class="close-button">&times;</button>
-            <pre id="file-content"></pre>
-        </div>
-    </div>
+    <!-- Styles for plain text rendering -->
+    <style>
+        .response-container pre {
+            white-space: pre-wrap; /* Ensure long lines wrap properly */
+            font-family: monospace; /* Maintain plain text styling */
+            color: #f1f1f1; /* Match text color with chat window */
+        }
+    </style>
 
+    <!-- Scripts -->
     <script src="/static/chat.js"></script>
-    <script src="/static/event-listeners.js"></script>
 </body>
 </html>

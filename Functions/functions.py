@@ -4,6 +4,8 @@ import PyPDF2
 import urllib.parse
 import logging
 
+# All the output from the llm is plain text format in case it will be used for input again.
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -109,91 +111,104 @@ def write_file(file_path, content):
         logging.error(f"Error writing to file {file_path}: {e}")
         return f"Error writing file: {e}"
 
-
-def list_folder(folder_path: str, enable_preview: bool = True) -> str:
+# the structure and the path is saved into the same json file and it can be extracted separately from the json format response
+def list_folder(folder_path: str) -> dict:
     """
     Lists the structure of the last folder in the given folder path.
-    Outputs HTML format with hyperlinks for file previews if enabled.
+    Always outputs a JSON structure that includes both plain text format
+    and hierarchical JSON format.
 
     Args:
         folder_path (str): The path to the folder.
-        enable_preview (bool): Whether to generate hyperlinks for file previews.
 
     Returns:
-        str: A tree-like HTML string representation of the folder structure.
+        dict: A JSON structure containing plain text and hierarchical structure.
     """
-    exclude_dirs = {'__pycache__', '.git', '.venv', 'node_modules'}
-    exclude_files = set()
 
-    logging.info(f"Generating folder structure for: {folder_path} with preview enabled: {enable_preview}")
+    logging.info(f"Generating folder structure for: {folder_path}")
 
     def build_tree(path, level=0):
-        html_structure = ""
-        indent = "&nbsp;&nbsp;&nbsp;&nbsp;" * level
+        plain_text_structure = ""
+        json_structure = {"name": os.path.basename(path), "type": "folder", "children": []}
+        indent = "    " * level
         prefix = f"{indent}├── "
 
         if os.path.isdir(path):
             dir_name = os.path.basename(path)
-            if dir_name.startswith('.') or dir_name in exclude_dirs:
-                logging.debug(f"Skipping excluded directory: {dir_name}")
-                return ""
+            if dir_name.startswith('.'):  # Skip hidden directories
+                logging.debug(f"Skipping hidden directory: {dir_name}")
+                return "", None
 
-            html_structure += f"{prefix}<span>{dir_name}/</span><br>"
+            plain_text_structure += f"{prefix}{dir_name}/\n"
             logging.debug(f"Added directory: {dir_name}")
 
             for item in sorted(os.listdir(path)):
-                if item.startswith('.'):
+                item_path = os.path.join(path, item)
+                if item.startswith('.'):  # Skip hidden files/directories
                     logging.debug(f"Skipping hidden file/directory: {item}")
                     continue
-                item_path = os.path.join(path, item)
-                if os.path.isdir(item_path) and item in exclude_dirs:
-                    logging.debug(f"Skipping excluded subdirectory: {item}")
-                    continue
-                if os.path.isfile(item_path) and item in exclude_files:
-                    logging.debug(f"Skipping excluded file: {item}")
-                    continue
-                html_structure += build_tree(item_path, level + 1)
+
+                sub_plain, sub_json = build_tree(item_path, level + 1)
+                plain_text_structure += sub_plain
+                if sub_json:  # Add child to JSON structure
+                    json_structure["children"].append(sub_json)
         else:
             file_name = os.path.basename(path)
-            if file_name.startswith('.') or file_name in exclude_files:
-                logging.debug(f"Skipping hidden or excluded file: {file_name}")
-                return ""
+            if file_name.startswith('.'):  # Skip hidden files
+                logging.debug(f"Skipping hidden file: {file_name}")
+                return "", None
 
-            if enable_preview:
-                encoded_path = urllib.parse.quote(path)
-                html_structure += f'{prefix}<a href="javascript:void(0);" class="file-link" data-file-path="{encoded_path}">{file_name}</a><br>'
-                logging.debug(f"Added file with preview link: {file_name}")
-            else:
-                html_structure += f"{prefix}{file_name}<br>"
-                logging.debug(f"Added file without preview link: {file_name}")
+            plain_text_structure += f"{prefix}{file_name}\n"
+            logging.debug(f"Added file: {file_name}")
 
-        return html_structure
+            # Add file to JSON structure
+            json_structure = {"name": file_name, "type": "file", "path": path}
 
+        return plain_text_structure, json_structure
+
+    # Validate the folder path
     if not os.path.exists(folder_path):
         logging.error(f"Path does not exist: {folder_path}")
-        return f"<p>Error: {folder_path} does not exist.</p>"
+        return {
+            "error": f"Path does not exist: {folder_path}",
+            "plain_text": "",
+            "folder_json": None,
+        }
     if not os.path.isdir(folder_path):
         logging.error(f"Path is not a folder: {folder_path}")
-        return f"<p>Error: {folder_path} is not a folder.</p>"
+        return {
+            "error": f"Path is not a folder: {folder_path}",
+            "plain_text": "",
+            "folder_json": None,
+        }
 
     try:
         last_folder_name = os.path.basename(os.path.abspath(folder_path))
-        html_tree = f'<div class="folder-structure">├── {last_folder_name}/<br>'
+        plain_text_tree = f"{last_folder_name}/\n"
+        json_tree = {"name": last_folder_name, "type": "folder", "children": []}
+
         for item in sorted(os.listdir(folder_path)):
-            if item.startswith('.'):
+            item_path = os.path.join(folder_path, item)
+            if item.startswith('.'):  # Skip hidden files/directories
                 logging.debug(f"Skipping hidden file/directory in root: {item}")
                 continue
-            item_path = os.path.join(folder_path, item)
-            if os.path.isdir(item_path) and item in exclude_dirs:
-                logging.debug(f"Skipping excluded directory in root: {item}")
-                continue
-            if os.path.isfile(item_path) and item in exclude_files:
-                logging.debug(f"Skipping excluded file in root: {item}")
-                continue
-            html_tree += build_tree(item_path, level=1)
-        html_tree += "</div>"
+
+            sub_plain, sub_json = build_tree(item_path, level=1)
+            plain_text_tree += sub_plain
+            if sub_json:  # Add child to JSON root
+                json_tree["children"].append(sub_json)
+
         logging.info(f"Successfully generated folder structure for: {folder_path}")
-        return html_tree
+
+        # Return combined output
+        return {
+            "plain_text": plain_text_tree,
+            "folder_json": json_tree
+        }
     except Exception as e:
         logging.error(f"Error reading folder: {e}")
-        return f"<p>Error reading folder: {e}</p>"
+        return {
+            "error": f"Error reading folder: {e}",
+            "plain_text": "",
+            "folder_json": None,
+        }

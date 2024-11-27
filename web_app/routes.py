@@ -86,24 +86,25 @@ async def preview_file(path: str = Query(...)):
 @router.get("/list-folder/", response_class=JSONResponse)
 async def list_folder_route(folder_path: str = Query(...)):
     """
-    Endpoint to list the folder structure with hyperlinks for files.
+    Endpoint to list the folder structure in plain text and JSON format.
 
     Args:
         folder_path (str): The path to the folder.
 
     Returns:
-        JSONResponse: The folder structure in JSON format.
+        JSONResponse: Plain text and JSON structure.
     """
     logging.info(f"Listing folder structure for: {folder_path}")
     try:
-        folder_structure = list_folder(folder_path, enable_preview=True)
-        logging.debug(f"Generated folder structure HTML: {folder_structure}")
-        return JSONResponse(content={"folder_structure": folder_structure})
+        folder_data = list_folder(folder_path)
+        if "error" in folder_data:
+            return JSONResponse(content={"error": folder_data["error"]}, status_code=400)
+        
+        # Return only plain_text for now
+        return JSONResponse(content={"plain_text": folder_data["plain_text"]})
     except Exception as e:
         logging.error(f"Error listing folder: {e}")
-        return JSONResponse(
-            content={"error": f"Unable to list folder: {e}"}, status_code=500
-        )
+        return JSONResponse(content={"error": f"Unable to list folder: {e}"}, status_code=500)
 
 
 @router.post("/upload-file/", response_class=JSONResponse)

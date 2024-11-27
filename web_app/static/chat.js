@@ -27,34 +27,29 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     // Scroll to the bottom of the chat window
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
-    if (DEBUG_MODE) console.debug("User input:", userInput);
-
-    // Send the user's message to the server
     try {
-        const response = await fetch("/handle-prompt/", {
-            method: "POST",
+        const response = await fetch("/list-folder/?folder_path=" + encodeURIComponent(userInput), {
+            method: "GET",
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/json",
             },
-            body: `user_prompt=${encodeURIComponent(userInput)}`,
         });
 
         if (response.ok) {
             const jsonResponse = await response.json(); // Parse JSON response
             if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
 
-            if (jsonResponse.result) {
-                const result = jsonResponse.result;
+            // Check if plain_text exists in the response
+            if (jsonResponse.plain_text) {
+                const plainText = jsonResponse.plain_text;
 
-                // Render the HTML response content
+                // Display the plain text structure in the chat window
                 const responseContainer = document.createElement("div");
                 responseContainer.classList.add("response-container");
-                responseContainer.innerHTML = result; // Insert result as HTML
+                responseContainer.textContent = plainText; // Display plain text directly
                 chatWindow.appendChild(responseContainer);
-
-                // Reattach event listeners for dynamically added links
-                attachFileLinkListeners();
             } else if (jsonResponse.error) {
+                // Handle error response
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");
                 errorMessage.innerText = "Error: " + jsonResponse.error;
@@ -66,6 +61,7 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     } catch (error) {
         console.error("Error during fetch:", error);
 
+        // Display generic error message in chat window
         const errorMessage = document.createElement("div");
         errorMessage.classList.add("message", "bot");
         errorMessage.innerText = "Error: Unable to process your request.";
@@ -76,61 +72,6 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
 
         // Scroll to the bottom of the chat window
         chatWindow.scrollTop = chatWindow.scrollHeight;
-    }
-});
-
-// Function to attach event listeners to dynamically added file links
-function attachFileLinkListeners() {
-    document.querySelectorAll(".file-link").forEach((link) => {
-        link.addEventListener("click", async (event) => {
-            event.preventDefault();
-            const filePath = link.dataset.filePath;
-
-            try {
-                const response = await fetch(`/preview/?path=${encodeURIComponent(filePath)}`);
-                if (response.ok) {
-                    const content = await response.text();
-                    if (DEBUG_MODE) console.debug("File content:", content);
-
-                    // Display file content in a modal
-                    showModal(content);
-                } else {
-                    console.error("Failed to load file content. Status:", response.status);
-                    alert("Failed to load file content.");
-                }
-            } catch (error) {
-                console.error("Error fetching file content:", error);
-                alert("Error fetching file content.");
-            }
-        });
-    });
-}
-
-// Function to display a modal with file content
-function showModal(content) {
-    const modal = document.createElement("div");
-    modal.classList.add("modal");
-    modal.innerHTML = `
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <pre>${content}</pre>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    // Add event listener to close the modal
-    modal.querySelector(".close-button").addEventListener("click", () => {
-        modal.remove();
-    });
-
-    if (DEBUG_MODE) console.debug("Modal displayed successfully.");
-}
-
-// Close modal event listener for a fixed modal (if needed)
-document.getElementById("close-modal")?.addEventListener("click", () => {
-    const modal = document.getElementById("file-preview-modal");
-    if (modal) {
-        modal.style.display = "none";
     }
 });
 
