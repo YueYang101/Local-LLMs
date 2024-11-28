@@ -1,20 +1,18 @@
-const DEBUG_MODE = true;
-
 // Attach event listener to the form
 document.getElementById("chat-form").addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const userInput = document.getElementById("user-input").value;
+    const userInput = document.getElementById("user-input");
     const chatWindow = document.getElementById("chat-window");
 
     // Add the user's message to the chat window
     const userMessage = document.createElement("div");
     userMessage.classList.add("message", "user");
-    userMessage.innerText = userInput;
+    userMessage.innerText = userInput.value;
     chatWindow.appendChild(userMessage);
 
     // Clear the input field
-    document.getElementById("user-input").value = "";
+    userInput.value = "";
 
     // Add a progress bar to indicate processing
     const progressBarContainer = document.createElement("div");
@@ -28,7 +26,7 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
     try {
-        const response = await fetch("/list-folder/?folder_path=" + encodeURIComponent(userInput), {
+        const response = await fetch("/list-folder/?folder_path=" + encodeURIComponent(userInput.value), {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -39,17 +37,16 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             const jsonResponse = await response.json(); // Parse JSON response
             if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
 
-            // Check if plain_text exists in the response
+            // Check for plain_text in the response
             if (jsonResponse.plain_text) {
                 const plainText = jsonResponse.plain_text;
 
-                // Display the plain text structure in the chat window
+                // Display the plain text structure
                 const responseContainer = document.createElement("div");
                 responseContainer.classList.add("response-container");
-                responseContainer.textContent = plainText; // Display plain text directly
+                responseContainer.textContent = plainText; // Use textContent to maintain plain text
                 chatWindow.appendChild(responseContainer);
             } else if (jsonResponse.error) {
-                // Handle error response
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");
                 errorMessage.innerText = "Error: " + jsonResponse.error;
@@ -61,7 +58,6 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     } catch (error) {
         console.error("Error during fetch:", error);
 
-        // Display generic error message in chat window
         const errorMessage = document.createElement("div");
         errorMessage.classList.add("message", "bot");
         errorMessage.innerText = "Error: Unable to process your request.";
@@ -73,6 +69,16 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
         // Scroll to the bottom of the chat window
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
+});
+
+// Add event listener to dynamically resize the textarea
+const userInput = document.getElementById("user-input");
+userInput.addEventListener("input", () => {
+    // Reset the height to auto to calculate the new height correctly
+    userInput.style.height = "auto";
+
+    // Set the height based on the scroll height (content height)
+    userInput.style.height = userInput.scrollHeight + "px";
 });
 
 // Log uncaught errors in JavaScript for debugging

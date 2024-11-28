@@ -20,7 +20,7 @@ body {
 .sidebar {
     background-color: #2b2b3c; /* Slightly lighter dark grey for sidebar */
     color: #f1f1f1; /* White text */
-    width: 20%; /* Reduced width for sidebar */
+    width: 20%;
     padding: 20px;
     box-sizing: border-box;
     overflow-y: auto;
@@ -54,7 +54,7 @@ body {
 
 /* Chat container styles */
 .chat-container {
-    width: 80%; /* Adjusted width */
+    width: 80%;
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -90,7 +90,7 @@ body {
     text-align: left;
 }
 
-/* Updated input field for larger text box */
+/* Updated input field for dynamic resizing */
 form {
     display: flex;
     align-items: center;
@@ -98,21 +98,25 @@ form {
     margin-top: 10px;
 }
 
-input[type="text"] {
+textarea {
     flex-grow: 1;
-    padding: 15px; /* Increase padding for larger height */
+    padding: 10px;
     margin-right: 10px;
     border: 1px solid #555; /* Subtle border */
     border-radius: 5px;
     background-color: #1e1e2f; /* Match page background */
     color: #f1f1f1; /* Light text color */
     font-size: 16px; /* Larger font size for better readability */
-    height: 50px; /* Increase the height for a larger input box */
+    resize: none; /* Disable manual resizing */
+    overflow: hidden; /* Prevent overflow */
+    line-height: 1.5; /* Adjust line spacing */
+    min-height: 40px; /* Default height for single-line input */
+    max-height: 200px; /* Limit the growth of the textarea */
 }
 
 /* Submit button styling */
 button {
-    padding: 15px; /* Match the input field height */
+    padding: 10px; /* Match the input field height */
     background-color: #444; /* Match button styles */
     color: #f1f1f1;
     border: none;
