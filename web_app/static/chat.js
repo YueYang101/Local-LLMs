@@ -82,25 +82,22 @@ const userInput = document.getElementById("user-input");
 
 // Calculate line height from CSS and set defaults
 const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight); // Get line height from CSS
-const defaultLines = 1; // Default line number
-const defaultHeight = lineHeight * defaultLines; // Default height for 1 line
 const maxHeight = 200; // Maximum height limit
-let lineNumber = defaultLines; // Initial line number
 
-// Set the initial height explicitly
-userInput.style.height = `${defaultHeight}px`;
+// Set the initial height explicitly based on scrollHeight
+userInput.style.height = "auto"; // Temporarily reset to auto to get accurate scrollHeight
+userInput.style.height = `${userInput.scrollHeight}px`; // Set the initial height to fit the content
 
 // Add event listener for dynamic resizing
 userInput.addEventListener("input", () => {
-    // Calculate the current number of lines based on the scroll height
-    const currentLines = Math.ceil(userInput.scrollHeight / lineHeight);
+    // Temporarily reset height to auto to ensure scrollHeight reflects content height
+    userInput.style.height = "auto";
 
-    // Trigger dynamic resizing only if the line number changes
-    if (currentLines !== lineNumber) {
-        const newHeight = Math.min(currentLines * lineHeight, maxHeight); // Limit height to max-height
-        userInput.style.height = `${newHeight}px`; // Update the height
-        lineNumber = currentLines; // Update the tracked line number
-    }
+    // Calculate new height based on scrollHeight and limit it to maxHeight
+    const newHeight = Math.min(userInput.scrollHeight, maxHeight);
+
+    // Update the height
+    userInput.style.height = `${newHeight}px`;
 });
 
 // Handle Enter and Shift+Enter behavior
