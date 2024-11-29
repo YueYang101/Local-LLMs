@@ -110,7 +110,7 @@ textarea {
     resize: none; /* Disable manual resizing */
     overflow-y: hidden; /* Prevent vertical overflow */
     line-height: 24px; /* Explicit line height */
-    min-height: 96px; /* Consistent default height for 2 lines */
+    min-height: 24px; /* Consistent default height for 2 lines */
     max-height: 200px; /* Limit the growth of the textarea */
 }
 

@@ -82,20 +82,26 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
 const userInput = document.getElementById("user-input");
 
 // Ensure consistent default height before the user types
-const lineHeight = 24; // Match CSS line-height explicitly
-const defaultHeight = lineHeight * 4; // Default height for 2 lines
+const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight); // Get line height from CSS
+const defaultHeight = lineHeight * 1; // Default height for 4 lines
 const maxHeight = 200; // Maximum height limit
-userInput.style.height = `${defaultHeight}px`; // Ensure consistency with CSS
+let previousHeight = defaultHeight; // Store the previous height to avoid redundant updates
 
-// Add event listener for input resizing
+userInput.style.height = `${defaultHeight}px`; // Explicitly set the default height
+
+// Add event listener for dynamic resizing
 userInput.addEventListener("input", () => {
-    // Reset height to allow correct calculation
-    userInput.style.height = `${defaultHeight}px`;
-
-    // Calculate the scroll height and update dynamically
+    // Calculate the current scroll height of the content
     const scrollHeight = userInput.scrollHeight;
-    if (scrollHeight > defaultHeight) {
-        userInput.style.height = Math.min(scrollHeight, maxHeight) + "px";
+
+    // If the new height is different, adjust it
+    if (scrollHeight !== previousHeight && scrollHeight > defaultHeight) {
+        const newHeight = Math.min(scrollHeight, maxHeight);
+        userInput.style.height = `${newHeight}px`;
+        previousHeight = newHeight; // Update the previous height
+    } else if (scrollHeight <= defaultHeight) {
+        userInput.style.height = `${defaultHeight}px`; // Reset to default height if below threshold
+        previousHeight = defaultHeight; // Update the previous height
     }
 });
 
