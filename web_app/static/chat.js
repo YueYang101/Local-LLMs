@@ -1,3 +1,6 @@
+// Define DEBUG_MODE at the top of the file
+const DEBUG_MODE = true;
+
 // Attach event listener to the form
 document.getElementById("chat-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -5,14 +8,17 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     const userInput = document.getElementById("user-input");
     const chatWindow = document.getElementById("chat-window");
 
+    // Store the input value in a temporary variable
+    const inputValue = userInput.value.trim(); // Trim whitespace
+
+    // Clear the input field after capturing the value
+    userInput.value = "";
+
     // Add the user's message to the chat window
     const userMessage = document.createElement("div");
     userMessage.classList.add("message", "user");
-    userMessage.innerText = userInput.value;
+    userMessage.innerText = inputValue;
     chatWindow.appendChild(userMessage);
-
-    // Clear the input field
-    userInput.value = "";
 
     // Add a progress bar to indicate processing
     const progressBarContainer = document.createElement("div");
@@ -26,33 +32,34 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
     try {
-        const response = await fetch("/list-folder/?folder_path=" + encodeURIComponent(userInput.value), {
-            method: "GET",
+        // Make a POST request to the /handle-prompt/ endpoint
+        const response = await fetch("/handle-prompt/", {
+            method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
             },
+            body: `user_prompt=${encodeURIComponent(inputValue)}`,
         });
 
         if (response.ok) {
             const jsonResponse = await response.json(); // Parse JSON response
             if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
 
-            // Check for plain_text in the response
-            if (jsonResponse.plain_text) {
-                const plainText = jsonResponse.plain_text;
-
-                // Display the plain text structure
-                const responseContainer = document.createElement("div");
-                responseContainer.classList.add("response-container");
-                responseContainer.textContent = plainText; // Use textContent to maintain plain text
-                chatWindow.appendChild(responseContainer);
+            if (jsonResponse.result) {
+                // Display the result from the backend (LLM decision or output)
+                const resultContainer = document.createElement("div");
+                resultContainer.classList.add("response-container");
+                resultContainer.textContent = jsonResponse.result; // Use textContent to display plain text
+                chatWindow.appendChild(resultContainer);
             } else if (jsonResponse.error) {
+                // Handle errors returned by the backend
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");
                 errorMessage.innerText = "Error: " + jsonResponse.error;
                 chatWindow.appendChild(errorMessage);
             }
         } else {
+            // Handle HTTP errors
             throw new Error(`Server returned status ${response.status}`);
         }
     } catch (error) {

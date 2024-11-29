@@ -31,7 +31,6 @@ def handle_path(path):
         logging.error(f"Invalid path: {path}")
         return {"error": f"{path} is neither a valid file nor a folder."}
 
-
 def read_file(file_path):
     """
     Reads the contents of a file.
@@ -46,22 +45,25 @@ def read_file(file_path):
     try:
         logging.info(f"Reading file: {file_path}")
         if file_path.endswith(".docx"):
+            logging.debug("File type detected: .docx")
             doc = Document(file_path)
             content = "\n".join([para.text for para in doc.paragraphs])
-            logging.debug(f"Read .docx file successfully: {file_path}")
+            logging.debug(f"Successfully read .docx file: {file_path}")
             return content
         elif file_path.endswith(".pdf"):
+            logging.debug("File type detected: .pdf")
             pdf_text = ""
             with open(file_path, "rb") as pdf_file:
                 pdf_reader = PyPDF2.PdfReader(pdf_file)
                 for page in pdf_reader.pages:
                     pdf_text += page.extract_text()
-            logging.debug(f"Read .pdf file successfully: {file_path}")
+            logging.debug(f"Successfully read .pdf file: {file_path}")
             return pdf_text.strip()
         elif file_path.endswith(".py"):
+            logging.debug("File type detected: .py")
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
-                logging.debug(f"Read .py file successfully: {file_path}")
+                logging.debug(f"Successfully read .py file: {file_path}")
                 return content
         else:
             logging.warning(f"Unsupported file type: {file_path}")
@@ -73,7 +75,6 @@ def read_file(file_path):
     except Exception as e:
         logging.error(f"Error reading file {file_path}: {e}")
         return f"Error reading file: {e}"
-
 
 def write_file(file_path, content):
     """
@@ -89,6 +90,7 @@ def write_file(file_path, content):
     try:
         logging.info(f"Writing to file: {file_path}")
         if file_path.endswith(".docx"):
+            logging.debug("File type detected: .docx")
             doc = Document()
             for line in content.split("\n"):
                 doc.add_paragraph(line)
@@ -96,6 +98,7 @@ def write_file(file_path, content):
             logging.debug(f"Successfully wrote .docx file: {file_path}")
             return f"Word file successfully written to {file_path}"
         elif file_path.endswith(".py"):
+            logging.debug("File type detected: .py")
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(content)
             logging.debug(f"Successfully wrote .py file: {file_path}")
@@ -111,7 +114,6 @@ def write_file(file_path, content):
         logging.error(f"Error writing to file {file_path}: {e}")
         return f"Error writing file: {e}"
 
-# the structure and the path is saved into the same json file and it can be extracted separately from the json format response
 def list_folder(folder_path: str) -> dict:
     """
     Lists the structure of the last folder in the given folder path.
@@ -124,10 +126,10 @@ def list_folder(folder_path: str) -> dict:
     Returns:
         dict: A JSON structure containing plain text and hierarchical structure.
     """
-
     logging.info(f"Generating folder structure for: {folder_path}")
 
     def build_tree(path, level=0):
+        logging.debug(f"Building tree for path: {path}, level: {level}")
         plain_text_structure = ""
         json_structure = {"name": os.path.basename(path), "type": "folder", "children": []}
         indent = "    " * level
@@ -166,24 +168,17 @@ def list_folder(folder_path: str) -> dict:
 
         return plain_text_structure, json_structure
 
-    # Validate the folder path
     if not os.path.exists(folder_path):
         logging.error(f"Path does not exist: {folder_path}")
-        return {
-            "error": f"Path does not exist: {folder_path}",
-            "plain_text": "",
-            "folder_json": None,
-        }
+        return {"error": f"Path does not exist: {folder_path}", "plain_text": "", "folder_json": None}
+
     if not os.path.isdir(folder_path):
         logging.error(f"Path is not a folder: {folder_path}")
-        return {
-            "error": f"Path is not a folder: {folder_path}",
-            "plain_text": "",
-            "folder_json": None,
-        }
+        return {"error": f"Path is not a folder: {folder_path}", "plain_text": "", "folder_json": None}
 
     try:
         last_folder_name = os.path.basename(os.path.abspath(folder_path))
+        logging.debug(f"Processing root folder: {last_folder_name}")
         plain_text_tree = f"{last_folder_name}/\n"
         json_tree = {"name": last_folder_name, "type": "folder", "children": []}
 
@@ -201,14 +196,7 @@ def list_folder(folder_path: str) -> dict:
         logging.info(f"Successfully generated folder structure for: {folder_path}")
 
         # Return combined output
-        return {
-            "plain_text": plain_text_tree,
-            "folder_json": json_tree
-        }
+        return {"plain_text": plain_text_tree, "folder_json": json_tree}
     except Exception as e:
         logging.error(f"Error reading folder: {e}")
-        return {
-            "error": f"Error reading folder: {e}",
-            "plain_text": "",
-            "folder_json": None,
-        }
+        return {"error": f"Error reading folder: {e}", "plain_text": "", "folder_json": None}
