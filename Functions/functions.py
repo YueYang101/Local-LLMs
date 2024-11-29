@@ -242,4 +242,29 @@ def list_folder(folder_path: str) -> dict:
 
     if not os.path.isdir(folder_path):
         logging.error(f"Path is not a folder: {folder_path}")
-        return {"error": f"Path is not a folder: {folder_path}", "plain_text": "", "folder
+        return {"error": f"Path is not a folder: {folder_path}", "plain_text": "", "folder_json": None}
+
+    try:
+        last_folder_name = os.path.basename(os.path.abspath(folder_path))
+        logging.debug(f"Processing root folder: {last_folder_name}")
+        plain_text_tree = f"{last_folder_name}/\n"
+        json_tree = {"name": last_folder_name, "type": "folder", "children": []}
+
+        for item in sorted(os.listdir(folder_path)):
+            item_path = os.path.join(folder_path, item)
+            if item.startswith('.'):  # Skip hidden files/directories
+                logging.debug(f"Skipping hidden file/directory in root: {item}")
+                continue
+
+            sub_plain, sub_json = build_tree(item_path, level=1)
+            plain_text_tree += sub_plain
+            if sub_json:  # Add child to JSON root
+                json_tree["children"].append(sub_json)
+
+        logging.info(f"Successfully generated folder structure for: {folder_path}")
+
+        # Return combined output
+        return {"plain_text": plain_text_tree, "folder_json": json_tree}
+    except Exception as e:
+        logging.error(f"Error reading folder: {e}")
+        return {"error": f"Error reading folder: {e}", "plain_text": "", "folder_json": None}
