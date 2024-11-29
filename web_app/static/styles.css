@@ -107,11 +107,11 @@ textarea {
     background-color: #1e1e2f; /* Match page background */
     color: #f1f1f1; /* Light text color */
     font-size: 16px; /* Larger font size for better readability */
-    resize: none; /* Disable manual resizing */
-    overflow: hidden; /* Prevent overflow */
     line-height: 1.5; /* Adjust line spacing */
-    height: 40px; /* Set consistent default height (for 2 lines) */
+    height: calc(1.5em * 2 + 20px); /* 2 lines + padding */
     max-height: 200px; /* Limit the growth of the textarea */
+    resize: none; /* Disable manual resizing */
+    overflow-y: hidden; /* Prevent overflow */
 }
 
 /* Submit button styling */

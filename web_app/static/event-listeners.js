@@ -1,7 +1,4 @@
-// Debug mode to log detailed messages (set to true for debugging)
-const DEBUG_MODE = true;
-
-// Attach an event listener to the form
+// Attach event listener to the form
 document.getElementById("chat-form").addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -78,26 +75,39 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     }
 });
 
-// Add event listener to dynamically resize the textarea
+// Dynamic resizing logic for textarea
 const userInput = document.getElementById("user-input");
-userInput.addEventListener("input", () => {
-    // Set the default height to handle consistency
-    const defaultHeight = 40; // Height for 2 lines
-    const maxHeight = 200; // Maximum height
 
-    // Reset the height for recalculating scroll height
+// Ensure consistent default height before any input
+const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight); // Get line height from CSS
+const defaultHeight = lineHeight * 2; // Height for 2 lines
+const maxHeight = 200; // Maximum height limit
+userInput.style.height = `${defaultHeight}px`; // Explicitly set the default height
+
+// Add event listener for dynamic resizing
+userInput.addEventListener("input", () => {
+    // Reset height to the default before recalculating
     userInput.style.height = `${defaultHeight}px`;
 
-    // Calculate the new height
-    const lineHeight = parseInt(window.getComputedStyle(userInput).lineHeight, 10);
+    // Calculate the current scroll height of the content
     const scrollHeight = userInput.scrollHeight;
 
+    // If content height exceeds the default, expand the textarea
     if (scrollHeight > defaultHeight) {
         userInput.style.height = Math.min(scrollHeight, maxHeight) + "px";
     }
 });
 
-// Global error logging for debugging unexpected JavaScript errors
-window.addEventListener("error", (event) => {
-    if (DEBUG_MODE) console.error("Uncaught error:", event.message);
+// Handle Enter and Shift+Enter behavior
+userInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        if (event.shiftKey) {
+            // Allow multiline input with Shift+Enter
+            return;
+        } else {
+            // Prevent default Enter behavior and trigger form submission
+            event.preventDefault();
+            document.getElementById("chat-form").dispatchEvent(new Event("submit"));
+        }
+    }
 });
