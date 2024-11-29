@@ -78,14 +78,22 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     }
 });
 
-// Add event listener to dynamically resize the textarea
+// Dynamic resizing logic for textarea
 const userInput = document.getElementById("user-input");
 userInput.addEventListener("input", () => {
-    // Reset the height to auto to calculate the new height correctly
-    userInput.style.height = "auto";
+    const defaultHeight = 40; // Default height for 2 lines
+    const maxHeight = 200;   // Maximum height limit
 
-    // Set the height based on the scroll height (content height)
-    userInput.style.height = userInput.scrollHeight + "px";
+    // Reset height to calculate new size correctly
+    userInput.style.height = `${defaultHeight}px`;
+
+    // Calculate the current height based on scroll height
+    const scrollHeight = userInput.scrollHeight;
+
+    // Update height only if it exceeds the default height
+    if (scrollHeight > defaultHeight) {
+        userInput.style.height = Math.min(scrollHeight, maxHeight) + "px";
+    }
 });
 
 // Log uncaught errors in JavaScript for debugging
