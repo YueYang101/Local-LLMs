@@ -11,6 +11,11 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     // Store the input value in a temporary variable
     const inputValue = userInput.value.trim(); // Trim whitespace
 
+    if (!inputValue) {
+        // If input is empty, do nothing
+        return;
+    }
+
     // Clear the input field after capturing the value
     userInput.value = "";
 
@@ -73,11 +78,15 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
         // Remove the progress bar
         progressBarContainer.remove();
 
+        // Reset the input field's height after submission
+        resetInputHeight();
+
         // Scroll to the bottom of the chat window
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 });
 
+// Dynamic resizing logic for textarea
 const userInput = document.getElementById("user-input");
 
 // Calculate line height from CSS and set defaults
@@ -99,6 +108,12 @@ userInput.addEventListener("input", () => {
     // Update the height
     userInput.style.height = `${newHeight}px`;
 });
+
+// Function to reset the input height after submission
+function resetInputHeight() {
+    userInput.style.height = "auto"; // Temporarily reset to auto to calculate accurate height
+    userInput.style.height = `${lineHeight}px`; // Reset to default height for 1 line
+}
 
 // Handle Enter and Shift+Enter behavior
 userInput.addEventListener("keydown", (event) => {
