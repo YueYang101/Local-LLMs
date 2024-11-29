@@ -4,8 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat with LLM</title>
-    <!-- Add version number to the stylesheet link for cache busting -->
-    <link rel="stylesheet" href="/static/styles.css?v=1.0.0"> <!-- Change version here if the stylesheet is updated -->
+
+    <!-- Declare a version variable at the start of the file -->
+    <script>
+        const version = "1.0.4"; // Update version here
+    </script>
+
+    <!-- Dynamically load the stylesheet with the version number -->
+    <script>
+        const styleSheetLink = document.createElement("link");
+        styleSheetLink.rel = "stylesheet";
+        styleSheetLink.href = `/static/styles.css?v=${version}`;
+        document.head.appendChild(styleSheetLink);
+    </script>
 </head>
 <body>
     <div class="container">
@@ -39,7 +50,11 @@
         }
     </style>
 
-    <!-- Add version number to the JavaScript file link for cache busting -->
-    <script src="/static/chat.js?v=1.0.1"></script> <!-- Change version here if the JavaScript file is updated -->
+    <!-- Dynamically load the JavaScript file with the version number -->
+    <script>
+        const scriptTag = document.createElement("script");
+        scriptTag.src = `/static/chat.js?v=${version}`;
+        document.body.appendChild(scriptTag);
+    </script>
 </body>
 </html>

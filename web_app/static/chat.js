@@ -83,7 +83,7 @@ const userInput = document.getElementById("user-input");
 
 // Ensure consistent default height before the user types
 const lineHeight = 24; // Match CSS line-height explicitly
-const defaultHeight = lineHeight * 2; // Default height for 2 lines
+const defaultHeight = lineHeight * 4; // Default height for 2 lines
 const maxHeight = 200; // Maximum height limit
 userInput.style.height = `${defaultHeight}px`; // Ensure consistency with CSS
 
