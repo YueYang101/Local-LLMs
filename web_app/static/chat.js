@@ -62,20 +62,28 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             const jsonResponse = await response.json(); // Parse JSON response
             if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
 
+            // ========================
+            // HANDLE PLAIN_TEXT FIELD
+            // ========================
             if (jsonResponse.plain_text) {
-                // Extract and display the plain text from the backend response
                 const resultContainer = document.createElement("pre"); // Use <pre> to preserve formatting
                 resultContainer.classList.add("response-container");
-                resultContainer.textContent = jsonResponse.plain_text; // Extract and display plain text
+                resultContainer.textContent = jsonResponse.plain_text; // Display plain_text field
                 chatWindow.appendChild(resultContainer);
-            } else if (jsonResponse.result) {
-                // Fallback to display a general result if plain_text is not available
+            } 
+            // ========================
+            // HANDLE RESULT FIELD
+            // ========================
+            else if (jsonResponse.result) {
                 const resultContainer = document.createElement("div");
                 resultContainer.classList.add("response-container");
-                resultContainer.textContent = jsonResponse.result; // Use textContent to display plain text
+                resultContainer.textContent = jsonResponse.result; // Display result as plain text
                 chatWindow.appendChild(resultContainer);
-            } else if (jsonResponse.error) {
-                // Handle errors returned by the backend
+            } 
+            // ========================
+            // HANDLE BACKEND ERRORS
+            // ========================
+            else if (jsonResponse.error) {
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");
                 errorMessage.innerText = "Error: " + jsonResponse.error;
