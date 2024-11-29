@@ -86,16 +86,18 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     }
 });
 
-// Dynamic resizing logic for textarea
+// Dynamic input window feature
 const userInput = document.getElementById("user-input");
 
 // Calculate line height from CSS and set defaults
 const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight); // Get line height from CSS
 const maxHeight = 200; // Maximum height limit
 
+// Save the initial height of the input field
+const initialHeight = userInput.scrollHeight; // Save the initial scrollHeight
+
 // Set the initial height explicitly based on scrollHeight
-userInput.style.height = "auto"; // Temporarily reset to auto to get accurate scrollHeight
-userInput.style.height = `${userInput.scrollHeight}px`; // Set the initial height to fit the content
+userInput.style.height = `${initialHeight}px`;
 
 // Add event listener for dynamic resizing
 userInput.addEventListener("input", () => {
@@ -109,11 +111,16 @@ userInput.addEventListener("input", () => {
     userInput.style.height = `${newHeight}px`;
 });
 
-// Function to reset the input height after submission
-function resetInputHeight() {
-    userInput.style.height = "auto"; // Temporarily reset to auto to calculate accurate height
-    userInput.style.height = `${lineHeight}px`; // Reset to default height for 1 line
-}
+// Attach event listener to the form submit event to reset the height
+document.getElementById("chat-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    // Logic for submitting the input to the backend...
+
+    // Reset the textarea height after the input is sent
+    userInput.style.height = `${initialHeight}px`;
+});
+
 
 // Handle Enter and Shift+Enter behavior
 userInput.addEventListener("keydown", (event) => {
