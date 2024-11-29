@@ -96,6 +96,20 @@ userInput.addEventListener("input", () => {
     }
 });
 
+// Handle Enter and Shift+Enter behavior
+userInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        if (event.shiftKey) {
+            // Allow multiline input with Shift+Enter
+            return;
+        } else {
+            // Prevent default Enter behavior and trigger form submission
+            event.preventDefault();
+            document.getElementById("chat-form").dispatchEvent(new Event("submit"));
+        }
+    }
+});
+
 // Log uncaught errors in JavaScript for debugging
 window.addEventListener("error", (event) => {
     if (DEBUG_MODE) console.error("Uncaught error:", event.message);

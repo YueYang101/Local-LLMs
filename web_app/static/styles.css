@@ -108,9 +108,9 @@ textarea {
     color: #f1f1f1; /* Light text color */
     font-size: 16px; /* Larger font size for better readability */
     resize: none; /* Disable manual resizing */
-    overflow-y: auto; /* Allow vertical scrolling if content exceeds max-height */
+    overflow-y: hidden; /* Prevent vertical overflow */
     line-height: 1.5; /* Adjust line spacing */
-    min-height: 40px; /* Consistent default height (2 lines) */
+    min-height: calc(1.5em * 2); /* Set initial height to fit 2 lines */
     max-height: 200px; /* Limit the growth of the textarea */
 }
 
