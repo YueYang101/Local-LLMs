@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import logging
-from Functions.LLM_decision import llm_decision
+from Functions.functions import llm_decision
 
 # Set up logging
 logging.basicConfig(

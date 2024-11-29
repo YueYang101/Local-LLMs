@@ -1,68 +1,94 @@
 // Debug mode to log detailed messages (set to true for debugging)
 const DEBUG_MODE = true;
 
-// Attach a global event listener to dynamically handle clicks on file links
-document.addEventListener("click", function (event) {
-    // Check if the clicked element has the 'file-link' class
-    if (event.target.classList.contains("file-link")) {
-        event.preventDefault(); // Prevent default link behavior
-        const filePath = event.target.dataset.filePath; // Extract the file path
-        if (DEBUG_MODE) console.debug("File link clicked:", filePath);
-        previewFile(filePath); // Trigger the preview function
+// Attach an event listener to the form
+document.getElementById("chat-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const userInput = document.getElementById("user-input");
+    const chatWindow = document.getElementById("chat-window");
+
+    // Store the input value in a temporary variable
+    const inputValue = userInput.value.trim(); // Trim whitespace
+
+    // Clear the input field after capturing the value
+    userInput.value = "";
+
+    // Add the user's message to the chat window
+    const userMessage = document.createElement("div");
+    userMessage.classList.add("message", "user");
+    userMessage.innerText = inputValue;
+    chatWindow.appendChild(userMessage);
+
+    // Add a progress bar to indicate processing
+    const progressBarContainer = document.createElement("div");
+    progressBarContainer.classList.add("progress-bar-container");
+    const progressBar = document.createElement("div");
+    progressBar.classList.add("progress-bar");
+    progressBarContainer.appendChild(progressBar);
+    chatWindow.appendChild(progressBarContainer);
+
+    // Scroll to the bottom of the chat window
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    try {
+        // Make a POST request to the /handle-prompt/ endpoint
+        const response = await fetch("/handle-prompt/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `user_prompt=${encodeURIComponent(inputValue)}`,
+        });
+
+        if (response.ok) {
+            const jsonResponse = await response.json(); // Parse JSON response
+            if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
+
+            if (jsonResponse.result) {
+                // Display the result from the backend (LLM decision or output)
+                const resultContainer = document.createElement("div");
+                resultContainer.classList.add("response-container");
+                resultContainer.textContent = jsonResponse.result; // Use textContent to display plain text
+                chatWindow.appendChild(resultContainer);
+            } else if (jsonResponse.error) {
+                // Handle errors returned by the backend
+                const errorMessage = document.createElement("div");
+                errorMessage.classList.add("message", "bot");
+                errorMessage.innerText = "Error: " + jsonResponse.error;
+                chatWindow.appendChild(errorMessage);
+            }
+        } else {
+            // Handle HTTP errors
+            throw new Error(`Server returned status ${response.status}`);
+        }
+    } catch (error) {
+        console.error("Error during fetch:", error);
+
+        const errorMessage = document.createElement("div");
+        errorMessage.classList.add("message", "bot");
+        errorMessage.innerText = "Error: Unable to process your request.";
+        chatWindow.appendChild(errorMessage);
+    } finally {
+        // Remove the progress bar
+        progressBarContainer.remove();
+
+        // Scroll to the bottom of the chat window
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 });
 
-// Function to fetch and preview file content in a modal
-async function previewFile(filePath) {
-    try {
-        if (DEBUG_MODE) console.debug("Fetching file content for:", filePath);
-        
-        // Send a request to fetch file content
-        const response = await fetch(`/preview/?path=${encodeURIComponent(filePath)}`);
-        
-        if (response.ok) {
-            const fileContent = await response.text(); // Get the file content
-            if (DEBUG_MODE) console.debug("File content received:", fileContent);
-            
-            // Display the content in a modal
-            showModal(fileContent);
-        } else {
-            console.error("Failed to fetch file content. Status:", response.status);
-            alert("Failed to fetch file content. Please try again.");
-        }
-    } catch (error) {
-        console.error("Error during file preview:", error);
-        alert("An error occurred while fetching the file content.");
-    }
-}
+// Add event listener to dynamically resize the textarea
+const userInput = document.getElementById("user-input");
+userInput.addEventListener("input", () => {
+    // Reset the height to auto to calculate the new height correctly
+    userInput.style.height = "auto";
 
-// Function to dynamically create and display a modal with the file content
-function showModal(content) {
-    // Create the modal element
-    const modal = document.createElement("div");
-    modal.classList.add("popup-window");
-
-    // Set modal content
-    modal.innerHTML = `
-        <button class="popup-close-button" title="Close">&times;</button>
-        <div class="popup-content">
-            <pre>${content}</pre>
-        </div>
-    `;
-
-    // Add the modal to the body
-    document.body.appendChild(modal);
-
-    // Close the modal when the close button is clicked
-    modal.querySelector(".popup-close-button").addEventListener("click", () => {
-        modal.remove(); // Remove the modal from the DOM
-        if (DEBUG_MODE) console.debug("Modal closed successfully.");
-    });
-
-    if (DEBUG_MODE) console.debug("Modal displayed successfully.");
-}
+    // Set the height based on the scroll height (content height)
+    userInput.style.height = userInput.scrollHeight + "px";
+});
 
 // Global error logging for debugging unexpected JavaScript errors
 window.addEventListener("error", (event) => {
-    if (DEBUG_MODE) console.error("Uncaught error:", event.message, "at", event.filename, "line:", event.lineno);
+    if (DEBUG_MODE) console.error("Uncaught error:", event.message);
 });

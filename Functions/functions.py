@@ -2,12 +2,77 @@ import os
 from docx import Document
 import PyPDF2
 import urllib.parse
+import json
 import logging
-
-# All the output from the llm is plain text format in case it will be used for input again.
+from LLM_interface.query_llm import query_llm
+from LLM_interface.preprocess import preprocess_prompt_with_functions
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Load configuration
+CONFIG_PATH = "LLM_interface/config.json"
+try:
+    with open(CONFIG_PATH, "r") as config_file:
+        config = json.load(config_file)
+except FileNotFoundError:
+    raise Exception(f"Configuration file not found at {CONFIG_PATH}")
+
+# Model and API settings
+MODEL_NAME = config.get("model_name", "llama3.1:70b")
+API_URL = config.get("api_url", "http://localhost:11434/api/generate")
+
+
+def llm_decision(user_prompt: str):
+    """
+    Handles the LLM decision-making process and executes the chosen function.
+
+    Args:
+        user_prompt (str): The user's input describing the task.
+
+    Returns:
+        str: The output of the chosen function or a general text response.
+    """
+    enriched_prompt = preprocess_prompt_with_functions(user_prompt)
+    llm_response = query_llm(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+
+    try:
+        # Try to parse the response as JSON
+        response_data = json.loads(llm_response)
+
+        # If JSON, extract function and parameters
+        function_name = response_data.get("function")
+        parameters = response_data.get("parameters", {})
+
+        if function_name == "handle_path":
+            path = parameters.get("path")
+            action_response = handle_path(path)
+
+            if "action" in action_response:
+                if action_response["action"] == "read_file":
+                    return read_file(action_response["path"])
+                elif action_response["action"] == "list_folder":
+                    return list_folder(action_response["path"])
+                else:
+                    return "Error: Unknown action from handle_path."
+            else:
+                return action_response.get("error", "Error: Invalid response from handle_path.")
+        elif function_name == "read_file":
+            return read_file(**parameters)
+        elif function_name == "write_file":
+            return write_file(**parameters)
+        elif function_name == "list_folder":
+            return list_folder(**parameters)
+        else:
+            return f"Error: Unknown function '{function_name}' requested by the LLM."
+    except json.JSONDecodeError:
+        # If not JSON, treat as a plain text response
+        logging.info("Received a general text response from LLM.")
+        return llm_response.strip()
+    except Exception as e:
+        logging.error(f"Error executing function: {e}")
+        return f"Error executing function: {e}"
+
 
 def handle_path(path):
     """
@@ -30,6 +95,7 @@ def handle_path(path):
     else:
         logging.error(f"Invalid path: {path}")
         return {"error": f"{path} is neither a valid file nor a folder."}
+
 
 def read_file(file_path):
     """
@@ -76,6 +142,7 @@ def read_file(file_path):
         logging.error(f"Error reading file {file_path}: {e}")
         return f"Error reading file: {e}"
 
+
 def write_file(file_path, content):
     """
     Writes or updates a file with the specified content.
@@ -113,6 +180,7 @@ def write_file(file_path, content):
     except Exception as e:
         logging.error(f"Error writing to file {file_path}: {e}")
         return f"Error writing file: {e}"
+
 
 def list_folder(folder_path: str) -> dict:
     """
@@ -174,29 +242,4 @@ def list_folder(folder_path: str) -> dict:
 
     if not os.path.isdir(folder_path):
         logging.error(f"Path is not a folder: {folder_path}")
-        return {"error": f"Path is not a folder: {folder_path}", "plain_text": "", "folder_json": None}
-
-    try:
-        last_folder_name = os.path.basename(os.path.abspath(folder_path))
-        logging.debug(f"Processing root folder: {last_folder_name}")
-        plain_text_tree = f"{last_folder_name}/\n"
-        json_tree = {"name": last_folder_name, "type": "folder", "children": []}
-
-        for item in sorted(os.listdir(folder_path)):
-            item_path = os.path.join(folder_path, item)
-            if item.startswith('.'):  # Skip hidden files/directories
-                logging.debug(f"Skipping hidden file/directory in root: {item}")
-                continue
-
-            sub_plain, sub_json = build_tree(item_path, level=1)
-            plain_text_tree += sub_plain
-            if sub_json:  # Add child to JSON root
-                json_tree["children"].append(sub_json)
-
-        logging.info(f"Successfully generated folder structure for: {folder_path}")
-
-        # Return combined output
-        return {"plain_text": plain_text_tree, "folder_json": json_tree}
-    except Exception as e:
-        logging.error(f"Error reading folder: {e}")
-        return {"error": f"Error reading folder: {e}", "plain_text": "", "folder_json": None}
+        return {"error": f"Path is not a folder: {folder_path}", "plain_text": "", "folder

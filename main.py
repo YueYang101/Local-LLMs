@@ -1,6 +1,7 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response
 from web_app.routes import router
 import logging
 
@@ -15,6 +16,17 @@ app.include_router(router)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="web_app/static"), name="static")
+
+# Add middleware to set cache-control headers
+@app.middleware("http")
+async def cache_headers(request: Request, call_next):
+    """
+    Middleware to add Cache-Control headers to all HTTP responses.
+    Prevents browsers from caching API responses or other dynamic content.
+    """
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return response
 
 @app.on_event("startup")
 async def startup_event():
