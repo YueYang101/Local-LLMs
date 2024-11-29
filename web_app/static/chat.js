@@ -78,30 +78,28 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     }
 });
 
-// Dynamic resizing logic for textarea
 const userInput = document.getElementById("user-input");
 
-// Ensure consistent default height before the user types
+// Calculate line height from CSS and set defaults
 const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight); // Get line height from CSS
-const defaultHeight = lineHeight * 1; // Default height for 4 lines
+const defaultLines = 1; // Default line number
+const defaultHeight = lineHeight * defaultLines; // Default height for 1 line
 const maxHeight = 200; // Maximum height limit
-let previousHeight = defaultHeight; // Store the previous height to avoid redundant updates
+let lineNumber = defaultLines; // Initial line number
 
-userInput.style.height = `${defaultHeight}px`; // Explicitly set the default height
+// Set the initial height explicitly
+userInput.style.height = `${defaultHeight}px`;
 
 // Add event listener for dynamic resizing
 userInput.addEventListener("input", () => {
-    // Calculate the current scroll height of the content
-    const scrollHeight = userInput.scrollHeight;
+    // Calculate the current number of lines based on the scroll height
+    const currentLines = Math.ceil(userInput.scrollHeight / lineHeight);
 
-    // If the new height is different, adjust it
-    if (scrollHeight !== previousHeight && scrollHeight > defaultHeight) {
-        const newHeight = Math.min(scrollHeight, maxHeight);
-        userInput.style.height = `${newHeight}px`;
-        previousHeight = newHeight; // Update the previous height
-    } else if (scrollHeight <= defaultHeight) {
-        userInput.style.height = `${defaultHeight}px`; // Reset to default height if below threshold
-        previousHeight = defaultHeight; // Update the previous height
+    // Trigger dynamic resizing only if the line number changes
+    if (currentLines !== lineNumber) {
+        const newHeight = Math.min(currentLines * lineHeight, maxHeight); // Limit height to max-height
+        userInput.style.height = `${newHeight}px`; // Update the height
+        lineNumber = currentLines; // Update the tracked line number
     }
 });
 
