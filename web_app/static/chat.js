@@ -1,7 +1,19 @@
-// Define DEBUG_MODE at the top of the file
+// ========================
+// GLOBAL CONFIGURATION
+// ========================
 const DEBUG_MODE = true;
 
-// Attach event listener to the form
+// ========================
+// RESET INPUT HEIGHT FUNCTION
+// ========================
+function resetInputHeight() {
+    const userInput = document.getElementById("user-input");
+    userInput.style.height = `${initialHeight}px`; // Reset to the initial height
+}
+
+// ========================
+// FORM SUBMISSION EVENT HANDLER
+// ========================
 document.getElementById("chat-form").addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -50,8 +62,14 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             const jsonResponse = await response.json(); // Parse JSON response
             if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
 
-            if (jsonResponse.result) {
-                // Display the result from the backend (LLM decision or output)
+            if (jsonResponse.plain_text) {
+                // Extract and display the plain text from the backend response
+                const resultContainer = document.createElement("pre"); // Use <pre> to preserve formatting
+                resultContainer.classList.add("response-container");
+                resultContainer.textContent = jsonResponse.plain_text; // Extract and display plain text
+                chatWindow.appendChild(resultContainer);
+            } else if (jsonResponse.result) {
+                // Fallback to display a general result if plain_text is not available
                 const resultContainer = document.createElement("div");
                 resultContainer.classList.add("response-container");
                 resultContainer.textContent = jsonResponse.result; // Use textContent to display plain text
@@ -86,7 +104,9 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     }
 });
 
-// Dynamic input window feature
+// ========================
+// DYNAMIC INPUT RESIZING
+// ========================
 const userInput = document.getElementById("user-input");
 
 // Calculate line height from CSS and set defaults
@@ -111,18 +131,9 @@ userInput.addEventListener("input", () => {
     userInput.style.height = `${newHeight}px`;
 });
 
-// Attach event listener to the form submit event to reset the height
-document.getElementById("chat-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    // Logic for submitting the input to the backend...
-
-    // Reset the textarea height after the input is sent
-    userInput.style.height = `${initialHeight}px`;
-});
-
-
-// Handle Enter and Shift+Enter behavior
+// ========================
+// HANDLE ENTER AND SHIFT+ENTER
+// ========================
 userInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
         if (event.shiftKey) {
@@ -136,7 +147,9 @@ userInput.addEventListener("keydown", (event) => {
     }
 });
 
-// Log uncaught errors in JavaScript for debugging
+// ========================
+// GLOBAL ERROR LOGGING
+// ========================
 window.addEventListener("error", (event) => {
     if (DEBUG_MODE) console.error("Uncaught error:", event.message);
 });
