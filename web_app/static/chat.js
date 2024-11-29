@@ -82,10 +82,10 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
 const userInput = document.getElementById("user-input");
 
 // Ensure consistent default height before the user types
-const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight);
-const defaultHeight = lineHeight * 2; // Height for 2 lines
+const lineHeight = 24; // Match CSS line-height explicitly
+const defaultHeight = lineHeight * 2; // Default height for 2 lines
 const maxHeight = 200; // Maximum height limit
-userInput.style.height = `${defaultHeight}px`; // Apply default height explicitly
+userInput.style.height = `${defaultHeight}px`; // Ensure consistency with CSS
 
 // Add event listener for input resizing
 userInput.addEventListener("input", () => {
