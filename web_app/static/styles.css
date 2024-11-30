@@ -161,10 +161,10 @@ button:hover {
 
 /* Plain text response container */
 .response-container {
-    background-color: #1e1e2f; /* Match chat window background */
+    background-color: #1e1e2f; /* Dark background */
     border: 1px solid #444; /* Subtle border */
-    border-radius: 5px;
-    margin-bottom: 10px;
+    border-radius: 5px; 
+    margin: 10px 0;
     padding: 10px;
     color: #f1f1f1; /* Light text color */
     font-family: monospace; /* Monospace for plain text display */

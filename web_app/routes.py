@@ -54,8 +54,15 @@ async def handle_prompt(user_prompt: str = Form(...)):
         decision = llm_decision(user_prompt)
         logging.debug(f"LLM decision result: {decision}")
 
-        # Directly return the LLM decision for now
-        return JSONResponse(content={"result": decision})
+        # Check if the decision is a dictionary with a plain_text field
+        if isinstance(decision, dict) and "plain_text" in decision:
+            return JSONResponse(content={
+                "plain_text": decision.get("plain_text"),  # Extract plain_text
+                "detailed_info": decision.get("detailed_info", {})  # Pass the JSON structure if needed
+            })
+        else:
+            # If plain_text is not available, return the entire decision as a fallback
+            return JSONResponse(content={"result": decision})
     except Exception as e:
         logging.error(f"Error processing user prompt: {e}")
         return JSONResponse(content={"error": f"Unable to process your request: {e}"}, status_code=500)

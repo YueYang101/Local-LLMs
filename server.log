@@ -1,0 +1,318 @@
+2024-11-29 18:50:59,849 - INFO - Application startup complete.
+2024-11-29 18:51:01,166 - DEBUG - Calling on_field_start with no data
+2024-11-29 18:51:01,166 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-29 18:51:01,166 - DEBUG - Calling on_field_data with data[12:113]
+2024-11-29 18:51:01,166 - DEBUG - Calling on_field_end with no data
+2024-11-29 18:51:01,166 - DEBUG - Calling on_end with no data
+2024-11-29 18:51:01,167 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-29 18:51:01,167 - ERROR - Error processing user prompt: name 'API_URL' is not defined
+2024-11-29 18:51:03,911 - INFO - Rendering the homepage.
+2024-11-29 18:51:07,456 - DEBUG - Calling on_field_start with no data
+2024-11-29 18:51:07,456 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-29 18:51:07,456 - DEBUG - Calling on_field_data with data[12:113]
+2024-11-29 18:51:07,456 - DEBUG - Calling on_field_end with no data
+2024-11-29 18:51:07,457 - DEBUG - Calling on_end with no data
+2024-11-29 18:51:07,457 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-29 18:51:07,457 - ERROR - Error processing user prompt: name 'API_URL' is not defined
+2024-11-29 18:55:56,226 - INFO - Application shutdown.
+2024-11-29 18:55:56,493 - INFO - Application startup complete.
+2024-11-29 18:55:56,695 - INFO - Application shutdown.
+2024-11-29 18:55:56,951 - INFO - Application startup complete.
+2024-11-29 18:58:58,261 - INFO - Application shutdown.
+2024-11-29 18:58:58,555 - INFO - Application startup complete.
+2024-11-29 18:58:58,757 - INFO - Application shutdown.
+2024-11-29 18:58:59,028 - INFO - Application startup complete.
+2024-11-29 18:59:11,950 - INFO - Application shutdown.
+2024-11-29 18:59:12,245 - INFO - Application startup complete.
+2024-11-29 18:59:24,514 - DEBUG - Calling on_field_start with no data
+2024-11-29 18:59:24,514 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-29 18:59:24,514 - DEBUG - Calling on_field_data with data[12:113]
+2024-11-29 18:59:24,515 - DEBUG - Calling on_field_end with no data
+2024-11-29 18:59:24,515 - DEBUG - Calling on_end with no data
+2024-11-29 18:59:24,515 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-29 18:59:24,525 - DEBUG - Starting new HTTP connection (1): localhost:11434
+2024-11-29 18:59:34,686 - DEBUG - http://localhost:11434 "POST /api/generate HTTP/11" 200 None
+2024-11-29 18:59:34,688 - DEBUG - LLM decision result: {'plain_text': "Error: Unknown function '['handle_path']' requested by the LLM.", 'detailed_info': {}}
+2024-11-30 08:44:47,964 - INFO - Application shutdown.
+2024-11-30 08:44:48,369 - INFO - Application startup complete.
+2024-11-30 08:44:48,573 - INFO - Application shutdown.
+2024-11-30 08:44:48,862 - INFO - Application startup complete.
+2024-11-30 08:45:01,230 - INFO - Rendering the homepage.
+2024-11-30 08:45:03,136 - DEBUG - Calling on_field_start with no data
+2024-11-30 08:45:03,138 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-30 08:45:03,138 - DEBUG - Calling on_field_data with data[12:113]
+2024-11-30 08:45:03,138 - DEBUG - Calling on_field_end with no data
+2024-11-30 08:45:03,138 - DEBUG - Calling on_end with no data
+2024-11-30 08:45:03,138 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-30 08:45:03,139 - ERROR - Error processing user prompt: name 'preprocess_prompt_with_functions' is not defined
+2024-11-30 08:46:04,059 - INFO - Application shutdown.
+2024-11-30 08:46:04,337 - INFO - Application startup complete.
+2024-11-30 08:46:05,248 - INFO - Application shutdown.
+2024-11-30 08:46:05,506 - INFO - Application startup complete.
+2024-11-30 08:46:10,691 - DEBUG - Calling on_field_start with no data
+2024-11-30 08:46:10,691 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-30 08:46:10,691 - DEBUG - Calling on_field_data with data[12:113]
+2024-11-30 08:46:10,691 - DEBUG - Calling on_field_end with no data
+2024-11-30 08:46:10,691 - DEBUG - Calling on_end with no data
+2024-11-30 08:46:10,691 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-30 08:46:10,697 - DEBUG - Starting new HTTP connection (1): localhost:11434
+2024-11-30 08:46:39,774 - DEBUG - http://localhost:11434 "POST /api/generate HTTP/11" 200 None
+2024-11-30 08:46:39,776 - INFO - Received a general text response from LLM.
+2024-11-30 08:46:39,776 - DEBUG - LLM decision result: {'plain_text': 'Based on the user\'s input, it appears to be a file path. The next step would be to determine whether the given path is a file or folder and return a response to choose between reading a file or listing a folder structure.\n\nHere is the response:\n\n```\n{\n  "function": ["handle_path"],\n  "parameters": [\n    {\n      "path": "/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py"\n    }\n  ]\n}\n```', 'detailed_info': {}}
+2024-11-30 09:40:03,063 - INFO - Application shutdown.
+2024-11-30 09:40:03,330 - INFO - Application startup complete.
+2024-11-30 09:40:04,342 - INFO - Application shutdown.
+2024-11-30 09:40:04,595 - INFO - Application startup complete.
+2024-11-30 09:40:09,846 - DEBUG - Calling on_field_start with no data
+2024-11-30 09:40:09,846 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-30 09:40:09,846 - DEBUG - Calling on_field_data with data[12:113]
+2024-11-30 09:40:09,846 - DEBUG - Calling on_field_end with no data
+2024-11-30 09:40:09,847 - DEBUG - Calling on_end with no data
+2024-11-30 09:40:09,847 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-30 09:40:09,847 - INFO - Starting llm_decision function.
+2024-11-30 09:40:09,847 - DEBUG - Enriched prompt: 
+    You are a multi-functional assistant. You can:
+    1. Use the following functions:
+    {
+  "handle_path": "Detects if the given path is a file or folder and returns a response to choose between reading a file or listing a folder structure.",
+  "read_file": "Reads the contents of a file if user specify it is a file.",
+  "write_file": "Writes or updates a file with given content.",
+  "list_folder": "Lists the tree structure of a folder if user specify it is a folder."
+}
+    
+    2. Answer general knowledge questions or queries. For such queries, respond directly with the answer as text.
+    
+    Your task is to decide whether the user's input requires the use of one or more of the provided functions or if it is a general question.
+    
+    - For file or folder operations, respond with the function names (in the order they should be executed) and their corresponding parameters in JSON format. 
+    For example:
+    {
+        "function": ["write_file", "read_file"],
+        "parameters": [
+            {
+                "file_path": "/path/to/file",
+                "content": "Example content to write"
+            },
+            {
+                "file_path": "/path/to/file"
+            }
+        ]
+    }
+    
+    - For general questions, respond directly with the answer as plain text.
+    
+
+User Prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-30 09:40:09,850 - DEBUG - Starting new HTTP connection (1): localhost:11434
+2024-11-30 09:40:24,743 - DEBUG - http://localhost:11434 "POST /api/generate HTTP/11" 200 None
+2024-11-30 09:40:24,744 - DEBUG - LLM Response: Since the user has provided a specific path, I will use the "handle_path" function to determine if it's a file or folder.
+
+Here is my response:
+
+{
+    "function": ["handle_path"],
+    "parameters": [
+        {
+            "path": "/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py"
+        }
+    ]
+}
+
+Please let me know the output of the handle_path function so I can proceed further.
+2024-11-30 09:40:24,744 - ERROR - Error decoding LLM response as JSON.
+2024-11-30 09:40:24,744 - DEBUG - LLM decision result: {'plain_text': 'Since the user has provided a specific path, I will use the "handle_path" function to determine if it\'s a file or folder.\n\nHere is my response:\n\n{\n    "function": ["handle_path"],\n    "parameters": [\n        {\n            "path": "/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py"\n        }\n    ]\n}\n\nPlease let me know the output of the handle_path function so I can proceed further.', 'detailed_info': {}}
+2024-11-30 09:41:29,662 - INFO - Application shutdown.
+2024-11-30 09:41:29,939 - INFO - Application startup complete.
+2024-11-30 09:41:30,851 - INFO - Application shutdown.
+2024-11-30 09:41:31,113 - INFO - Application startup complete.
+2024-11-30 09:41:34,587 - DEBUG - Calling on_field_start with no data
+2024-11-30 09:41:34,587 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-30 09:41:34,587 - DEBUG - Calling on_field_data with data[12:113]
+2024-11-30 09:41:34,587 - DEBUG - Calling on_field_end with no data
+2024-11-30 09:41:34,587 - DEBUG - Calling on_end with no data
+2024-11-30 09:41:34,588 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-30 09:41:34,588 - INFO - Starting llm_decision function.
+2024-11-30 09:41:34,588 - DEBUG - Enriched prompt: 
+    You are a multi-functional assistant. You can:
+    1. Use the following functions:
+    {
+  "handle_path": "Detects if the given path is a file or folder and returns a response to choose between reading a file or listing a folder structure.",
+  "read_file": "Reads the contents of a file if user specify it is a file.",
+  "write_file": "Writes or updates a file with given content.",
+  "list_folder": "Lists the tree structure of a folder if user specify it is a folder."
+}
+    
+    2. Answer general knowledge questions or queries. For such queries, respond directly with the answer as text.
+    
+    Your task is to decide whether the user's input requires the use of one or more of the provided functions or if it is a general question.
+    
+    - For file or folder operations, respond with the function names (in the order they should be executed) and their corresponding parameters in JSON format only.
+    For example:
+    {
+        "function": ["write_file", "read_file"],
+        "parameters": [
+            {
+                "file_path": "/path/to/file",
+                "content": "Example content to write"
+            },
+            {
+                "file_path": "/path/to/file"
+            }
+        ]
+    }
+    
+    - For general questions, respond directly with the answer as plain text.
+    
+
+User Prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'
+2024-11-30 09:41:34,592 - DEBUG - Starting new HTTP connection (1): localhost:11434
+2024-11-30 09:41:41,560 - DEBUG - http://localhost:11434 "POST /api/generate HTTP/11" 200 None
+2024-11-30 09:41:41,561 - DEBUG - LLM Response: {
+  "function": ["handle_path"],
+  "parameters": [
+    {
+      "path": "/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py"
+    }
+  ]
+}
+2024-11-30 09:41:41,561 - INFO - Successfully parsed LLM response as JSON.
+2024-11-30 09:41:41,561 - INFO - Processing function: handle_path with parameters: {'path': '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py'}
+2024-11-30 09:41:41,561 - INFO - Starting handle_path function with path: /Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py
+2024-11-30 09:41:41,561 - INFO - Detected file: /Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py
+2024-11-30 09:41:41,561 - INFO - Starting read_file function with file_path: /Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py
+2024-11-30 09:41:41,561 - INFO - Detected .py file.
+2024-11-30 09:41:41,562 - INFO - Successfully read file.
+2024-11-30 09:41:41,562 - INFO - Successfully processed all functions.
+2024-11-30 09:41:41,562 - DEBUG - LLM decision result: {'plain_text': 'import uvicorn\nfrom fastapi import FastAPI, Request\nfrom fastapi.staticfiles import StaticFiles\nfrom fastapi.responses import Response\nfrom web_app.routes import router\nimport logging\n\n# Set up logging\nlogging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")\n\n# Initialize FastAPI app\napp = FastAPI(title="File Interaction Assistant API", version="1.0")\n\n# Include the router\napp.include_router(router)\n\n# Mount static files\napp.mount("/static", StaticFiles(directory="web_app/static"), name="static")\n\n# Add middleware to set cache-control headers\n@app.middleware("http")\nasync def cache_headers(request: Request, call_next):\n    """\n    Middleware to add Cache-Control headers to all HTTP responses.\n    Prevents browsers from caching API responses or other dynamic content.\n    """\n    response = await call_next(request)\n    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"\n    return response\n\n@app.on_event("startup")\nasync def startup_event():\n    logging.info("Application startup complete.")\n\n@app.on_event("shutdown")\nasync def shutdown_event():\n    logging.info("Application shutdown.")\n\nif __name__ == "__main__":\n    try:\n        logging.info("Starting the server...")\n        uvicorn.run(app, host="127.0.0.1", port=8000)\n    except Exception as e:\n        logging.error(f"Failed to start the server: {e}")', 'detailed_info': [{'file_path': '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs/main.py', 'file_name': 'main.py', 'file_type': '', 'line_count': 44, 'file_size': 1392}]}
+2024-11-30 09:45:21,945 - INFO - Application shutdown.
+2024-11-30 09:45:22,218 - INFO - Application startup complete.
+2024-11-30 09:45:22,420 - INFO - Application shutdown.
+2024-11-30 09:45:22,678 - INFO - Application startup complete.
+2024-11-30 09:57:52,829 - INFO - Application shutdown.
+2024-11-30 09:57:53,116 - INFO - Application startup complete.
+2024-11-30 09:57:54,229 - INFO - Application shutdown.
+2024-11-30 09:57:54,487 - INFO - Application startup complete.
+2024-11-30 10:32:02,084 - INFO - Application shutdown.
+2024-11-30 10:32:02,378 - INFO - Application startup complete.
+2024-11-30 10:32:03,388 - INFO - Application shutdown.
+2024-11-30 10:32:03,663 - INFO - Application startup complete.
+2024-11-30 10:33:19,732 - INFO - Rendering the homepage.
+2024-11-30 10:33:44,144 - DEBUG - Calling on_field_start with no data
+2024-11-30 10:33:44,144 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-30 10:33:44,144 - DEBUG - Calling on_field_data with data[12:103]
+2024-11-30 10:33:44,144 - DEBUG - Calling on_field_end with no data
+2024-11-30 10:33:44,145 - DEBUG - Calling on_end with no data
+2024-11-30 10:33:44,145 - INFO - Received user prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs'
+2024-11-30 10:33:44,145 - INFO - Starting llm_decision function.
+2024-11-30 10:33:44,145 - DEBUG - Enriched prompt: 
+    You are a multi-functional assistant. You can:
+    1. Use the following functions:
+    {
+  "handle_path": "Detects if the given path is a file or folder and returns a response to choose between reading a file or listing a folder structure.",
+  "read_file": "Reads the contents of a file if user specify it is a file.",
+  "write_file": "Writes or updates a file with given content.",
+  "list_folder": "Lists the tree structure of a folder if user specify it is a folder."
+}
+    
+    2. Answer general knowledge questions or queries. For such queries, respond directly with the answer as text.
+    
+    Your task is to decide whether the user's input requires the use of one or more of the provided functions or if it is a general question.
+    
+    - For file or folder operations, respond with the function names (in the order they should be executed) and their corresponding parameters in JSON format only.
+    For example:
+    {
+        "function": ["write_file", "read_file"],
+        "parameters": [
+            {
+                "file_path": "/path/to/file",
+                "content": "Example content to write"
+            },
+            {
+                "file_path": "/path/to/file"
+            }
+        ]
+    }
+    
+    - For general questions, respond directly with the answer as plain text.
+    
+
+User Prompt: '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs'
+2024-11-30 10:33:44,154 - DEBUG - Starting new HTTP connection (1): localhost:11434
+2024-11-30 10:33:53,788 - DEBUG - http://localhost:11434 "POST /api/generate HTTP/11" 200 None
+2024-11-30 10:33:53,789 - DEBUG - LLM Response: {
+  "function": ["handle_path"],
+  "parameters": [
+    {
+      "path": "/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs"
+    }
+  ]
+}
+2024-11-30 10:33:53,789 - INFO - Successfully parsed LLM response as JSON.
+2024-11-30 10:33:53,789 - INFO - Processing function: handle_path with parameters: {'path': '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs'}
+2024-11-30 10:33:53,789 - INFO - Starting handle_path function with path: None
+2024-11-30 10:33:53,789 - ERROR - Error in llm_decision function: stat: path should be string, bytes, os.PathLike or integer, not NoneType
+2024-11-30 10:33:53,789 - DEBUG - LLM decision result: {'plain_text': 'Error executing function: stat: path should be string, bytes, os.PathLike or integer, not NoneType', 'detailed_info': {}}
+2024-11-30 10:36:11,980 - INFO - Application shutdown.
+2024-11-30 10:36:12,249 - INFO - Application startup complete.
+2024-11-30 10:36:12,553 - INFO - Application shutdown.
+2024-11-30 10:36:12,829 - INFO - Application startup complete.
+2024-11-30 11:33:40,386 - DEBUG - Calling on_field_start with no data
+2024-11-30 11:33:40,386 - DEBUG - Calling on_field_name with data[0:11]
+2024-11-30 11:33:40,387 - DEBUG - Calling on_field_data with data[12:101]
+2024-11-30 11:33:40,387 - DEBUG - Calling on_field_end with no data
+2024-11-30 11:33:40,387 - DEBUG - Calling on_end with no data
+2024-11-30 11:33:40,387 - INFO - Received user prompt: /Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs
+2024-11-30 11:33:40,387 - INFO - Starting llm_decision function.
+2024-11-30 11:33:40,387 - DEBUG - Enriched prompt: 
+    You are a multi-functional assistant. You can:
+    1. Use the following functions:
+    {
+  "handle_path": "Detects if the given path is a file or folder and returns a response to choose between reading a file or listing a folder structure.",
+  "read_file": "Reads the contents of a file if user specify it is a file.",
+  "write_file": "Writes or updates a file with given content.",
+  "list_folder": "Lists the tree structure of a folder if user specify it is a folder."
+}
+    
+    2. Answer general knowledge questions or queries. For such queries, respond directly with the answer as text.
+    
+    Your task is to decide whether the user's input requires the use of one or more of the provided functions or if it is a general question.
+    
+    - For file or folder operations, respond with the function names (in the order they should be executed) and their corresponding parameters in JSON format only.
+    For example:
+    {
+        "function": ["write_file", "read_file"],
+        "parameters": [
+            {
+                "file_path": "/path/to/file",
+                "content": "Example content to write"
+            },
+            {
+                "file_path": "/path/to/file"
+            }
+        ]
+    }
+    
+    - For general questions, respond directly with the answer as plain text.
+    
+
+User Prompt: /Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs
+2024-11-30 11:33:40,394 - DEBUG - Starting new HTTP connection (1): localhost:11434
+2024-11-30 11:33:49,991 - DEBUG - http://localhost:11434 "POST /api/generate HTTP/11" 200 None
+2024-11-30 11:33:49,994 - DEBUG - LLM Response: {
+  "function": ["handle_path"],
+  "parameters": [
+    {
+      "path": "/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs"
+    }
+  ]
+}
+2024-11-30 11:33:49,995 - INFO - Successfully parsed LLM response as JSON.
+2024-11-30 11:33:49,995 - INFO - Processing function: handle_path with parameters: {'path': '/Users/yang/Library/CloudStorage/OneDrive-Personal/Github Reps/Local-LLMs'}
+2024-11-30 11:33:49,995 - INFO - Starting handle_path function with path: None
+2024-11-30 11:33:49,995 - ERROR - Error in llm_decision function: stat: path should be string, bytes, os.PathLike or integer, not NoneType
+2024-11-30 11:33:49,995 - DEBUG - LLM decision result: {'plain_text': 'Error executing function: stat: path should be string, bytes, os.PathLike or integer, not NoneType', 'detailed_info': {}}
+2024-11-30 11:45:07,094 - INFO - Application shutdown.
+2024-11-30 11:45:07,385 - INFO - Application startup complete.
+2024-11-30 11:45:07,589 - INFO - Application shutdown.
+2024-11-30 11:45:07,850 - INFO - Application startup complete.
+2024-11-30 11:45:21,083 - INFO - Application shutdown.

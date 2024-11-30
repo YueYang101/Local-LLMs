@@ -66,27 +66,15 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             // HANDLE PLAIN_TEXT FIELD
             // ========================
             if (jsonResponse.plain_text) {
-                const resultContainer = document.createElement("pre"); // Use <pre> to preserve formatting
-                resultContainer.classList.add("response-container");
-                resultContainer.textContent = jsonResponse.plain_text; // Display plain_text field
-                chatWindow.appendChild(resultContainer);
-            } 
-            // ========================
-            // HANDLE RESULT FIELD
-            // ========================
-            else if (jsonResponse.result) {
-                const resultContainer = document.createElement("div");
-                resultContainer.classList.add("response-container");
-                resultContainer.textContent = jsonResponse.result; // Display result as plain text
-                chatWindow.appendChild(resultContainer);
-            } 
-            // ========================
-            // HANDLE BACKEND ERRORS
-            // ========================
-            else if (jsonResponse.error) {
+                const plainTextContainer = document.createElement("pre"); // Use <pre> to preserve formatting
+                plainTextContainer.classList.add("response-container");
+                plainTextContainer.textContent = jsonResponse.plain_text; // Display plain_text field
+                chatWindow.appendChild(plainTextContainer);
+            } else {
+                // Handle missing plain_text gracefully
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");
-                errorMessage.innerText = "Error: " + jsonResponse.error;
+                errorMessage.innerText = "Error: No plain_text content found in the response.";
                 chatWindow.appendChild(errorMessage);
             }
         } else {
