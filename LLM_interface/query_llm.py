@@ -9,10 +9,10 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %
 # AVAILABLE FUNCTIONS
 # ========================
 AVAILABLE_FUNCTIONS = {
-    "handle_path": "Detects if the given path is a file or folder and returns a response to choose between reading a file or listing a folder structure.",
+    "handle_path": "Detects if the given path is a file or folder and returns a response to choose between read_file function or list_folder function.",
     "read_file": "Reads the contents of a file if user specify it is a file.",
     "write_file": "Writes or updates a file with given content.",
-    "list_folder": "Lists the tree structure of a folder if user specify it is a folder.",
+    "list_folder": "Lists the tree structure of a folder and provides detailed information about its contents when the user specifies it is a folder.",
 }
 
 # ========================
@@ -55,7 +55,7 @@ def preprocess_prompt_with_functions(user_prompt):
                 "content": "Example content to write"
             }},
             {{
-                "file_path": "/path/to/file"
+                "path": "/path/to/file"
             }}
         ]
     }}

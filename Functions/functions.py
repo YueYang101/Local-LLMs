@@ -239,11 +239,15 @@ def write_file(path: str, content: str):
 # ========================
 # LIST FOLDER FUNCTION
 # ========================
+import os
+import logging
+from PyPDF2 import PdfReader
+import docx
+
 def list_folder(path: str) -> dict:
     """
     Lists the structure of the last folder in the given path.
-    Always outputs a JSON structure that includes both plain text format
-    and hierarchical JSON format.
+    Outputs a plain text tree and a JSON structure containing file names and contents.
 
     Args:
         path (str): The path to the folder.
@@ -253,11 +257,35 @@ def list_folder(path: str) -> dict:
     """
     logging.info(f"Generating folder structure for: {path}")
 
+    # Helper function to read file content
+    def read_file_content(file_path: str) -> str:
+        try:
+            _, ext = os.path.splitext(file_path)
+            ext = ext.lower()
+
+            if ext == '.pdf':
+                with open(file_path, 'rb') as f:
+                    reader = PdfReader(f)
+                    return "\n".join(page.extract_text() for page in reader.pages)
+
+            elif ext == '.docx':
+                doc = docx.Document(file_path)
+                return "\n".join(paragraph.text for paragraph in doc.paragraphs)
+
+            elif ext in {'.txt', '.py', '.js', '.html', '.md'}:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+
+            return "Unsupported file type for preview."
+        except Exception as e:
+            logging.error(f"Error reading file {file_path}: {e}")
+            return f"Error reading file: {e}"
+
     # Helper function to recursively build the folder structure
     def build_tree(path, level=0):
         logging.debug(f"Building tree for path: {path}, level: {level}")
         plain_text_structure = ""
-        json_structure = {"name": os.path.basename(path), "type": "folder", "children": []}
+        json_structure = {"name": os.path.basename(path), "content": None}
         indent = "    " * level
         prefix = f"{indent}├── "
 
@@ -284,8 +312,6 @@ def list_folder(path: str) -> dict:
 
                 sub_plain, sub_json = build_tree(item_path, level + 1)
                 plain_text_structure += sub_plain
-                if sub_json:  # Add child to JSON structure
-                    json_structure["children"].append(sub_json)
         else:
             # Process files
             file_name = os.path.basename(path)
@@ -298,8 +324,9 @@ def list_folder(path: str) -> dict:
             plain_text_structure += f"{prefix}{file_name}\n"
             logging.debug(f"Added file: {file_name}")
 
-            # Add file to JSON structure
-            json_structure = {"name": file_name, "type": "file", "path": path}
+            # Add file content to JSON structure
+            json_structure["name"] = file_name
+            json_structure["content"] = read_file_content(path)
 
         return plain_text_structure, json_structure
 
@@ -323,7 +350,7 @@ def list_folder(path: str) -> dict:
         last_folder_name = os.path.basename(os.path.abspath(path))
         logging.debug(f"Processing root folder: {last_folder_name}")
         plain_text_tree = f"{last_folder_name}/\n"
-        json_tree = {"name": last_folder_name, "type": "folder", "children": []}
+        json_tree = []
 
         for item in sorted(os.listdir(path)):
             item_path = os.path.join(path, item)
@@ -336,7 +363,7 @@ def list_folder(path: str) -> dict:
             sub_plain, sub_json = build_tree(item_path, level=1)
             plain_text_tree += sub_plain
             if sub_json:  # Add child to JSON root
-                json_tree["children"].append(sub_json)
+                json_tree.append(sub_json)
 
         logging.info(f"Successfully generated folder structure for: {path}")
 
