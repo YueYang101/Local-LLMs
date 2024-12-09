@@ -118,8 +118,7 @@ def query_llm(api_url, model_name, prompt, stream=False):
 def query_llm_html_response(api_url, model_name, prompt, stream=False):
     """
     Queries the API with a prompt, asking the LLM to generate an HTML-formatted response.
-    The HTML includes highlighted titles, formatted code blocks, and enhanced features
-    like a black background, copy button, and code type display.
+    The HTML includes enhanced formatting for code blocks with proper styling and features.
 
     Args:
         api_url (str): The API URL to query.
@@ -130,18 +129,40 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
     Returns:
         str: The LLM's response in HTML format.
     """
-    # Add a pre-prompt to guide the LLM to format the output in enhanced HTML
+    # Enhanced pre-prompt with precise layout instructions
     pre_prompt = """
-    You are a data assistant. Your task is to respond with HTML-formatted content.
-    The output must include:
-    1. Titles highlighted using <h1>, <h2>, etc.
-    2. Code presented in <div class="code-container"> blocks for formatting.
-    3. Each code block should include:
-        a. Full black background.
-        b. Code type displayed above the code block in a <span> with the class "code-language".
-        c. A "Copy" button at the top right using <button> with the class "copy-button".
-    4. Explanations styled in <p> for clarity.
-    5. Ensure the HTML is clean, well-structured, and uses consistent class names for styling.
+    You are a data assistant. Your task is to generate an HTML-formatted response with the following requirements:
+    
+    1. **Titles and Headings**:
+       - Use <h1>, <h2>, etc., to highlight sections and subsections.
+
+    2. **Code Blocks**:
+       - Wrap all code inside a <div class="code-container">.
+       - Use a black background for the code block.
+       - Display the code type (e.g., Python, JavaScript) above the code block in a <span class="code-language"> element.
+       - Add a "Copy" button at the top-right corner of the code block using a <button class="copy-button"> element.
+       - Ensure the "Copy" button is functional (i.e., when clicked, it copies the code to the clipboard).
+
+    3. **Button Styling**:
+       - Place the "Copy" button inside the code block container and align it to the top-right corner.
+       - Use proper padding and margin so the button doesn’t overlap with the code.
+
+    4. **Explanations**:
+       - Provide detailed textual explanations styled in <p> tags.
+
+    5. **Clean and Well-Structured HTML**:
+       - Ensure proper indentation and semantic HTML structure.
+       - Use consistent class names to allow easy CSS styling.
+
+    Example HTML structure for a code block:
+    <div class="code-container">
+        <span class="code-language">Python</span>
+        <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+        <pre><code>
+        # Sample Python Code
+        print("Hello, World!")
+        </code></pre>
+    </div>
     """
     full_prompt = f"{pre_prompt}\n\n{prompt}"
 
