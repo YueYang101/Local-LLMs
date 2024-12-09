@@ -42,11 +42,11 @@ def preprocess_prompt_with_functions(user_prompt):
     1. Use the following functions:
     {json.dumps(AVAILABLE_FUNCTIONS, indent=2)}
     
-    2. Answer general knowledge questions or queries. For such queries, respond directly with the answer as text.
+    2. Answer general knowledge questions or queries. For such queries use general_question function.
     
     Your task is to decide whether the user's input requires the use of one or more of the provided functions or if it is a general question.
     
-    - For file or folder operations, respond with the function names (in the order they should be executed) and their corresponding parameters in JSON format only.
+    - Respond with the function names only (in the order they should be executed) and their corresponding parameters in JSON format.
     Your response **must strictly** follow the JSON format with the exact keys, structure and parameter names provided below:
     {{
         "function": ["write_file", "read_file", "general_question"],
@@ -173,6 +173,7 @@ def query_llm_marked_response(api_url, model_name, prompt, stream=False):
 
     Now, generate a response for the following input:
     """
+    
     full_prompt = f"{pre_prompt}\n\n{prompt}"
 
     # Prepare the request payload
@@ -186,10 +187,13 @@ def query_llm_marked_response(api_url, model_name, prompt, stream=False):
     try:
         with requests.post(api_url, headers=headers, json=payload, stream=stream) as response:
             response.raise_for_status()
+
             if stream:
                 logging.info("Processing streamed response from LLM.")
+                # Process the streamed response incrementally
                 return process_streamed_responses(response)
             else:
+                # Process the full response
                 llm_response = response.json().get("response", "No response generated.")
                 logging.info("Received response from LLM.")
                 logging.debug(f"Marked Plain-Text Response: {llm_response}")

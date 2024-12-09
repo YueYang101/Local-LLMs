@@ -29,7 +29,7 @@ def llm_decision(user_prompt: str):
     logging.debug(f"LLM Response: {llm_response}")
 
     try:
-        # Parse the response as JSON
+        # Attempt to parse the LLM response strictly as JSON
         response_data = json.loads(llm_response)
         logging.info("Successfully parsed LLM response as JSON.")
 
@@ -53,7 +53,8 @@ def llm_decision(user_prompt: str):
         results = []
         for func, param in zip(functions, parameters):
             logging.info(f"Processing function: {func} with parameters: {param}")
-            path = param.get("path")  # Consistent use of 'path'
+            path = param.get("path") if "path" in param else None  # Extract path if available
+
             if func == "handle_path":
                 action_response = handle_path(path)
 
@@ -104,9 +105,9 @@ def llm_decision(user_prompt: str):
             "detailed_info": combined_detailed_info,
         }
     except json.JSONDecodeError:
-        logging.error("Error decoding LLM response as JSON.")
+        logging.error(f"Error decoding LLM response as JSON: {llm_response}")
         return {
-            "html_response": f"<p>{llm_response.strip()}</p>",
+            "html_response": f"<p>Error: Invalid JSON response from LLM. Raw output: {llm_response}</p>",
             "detailed_info": {},
         }
     except Exception as e:
@@ -446,7 +447,7 @@ def general_question(user_prompt):
     logging.info("Handling general question.")
     
     # Query the LLM for marked response
-    marked_response = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=False)
+    marked_response = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt)
     logging.debug(f"Marked LLM Response: {marked_response}")
 
     # Convert marked response to HTML
