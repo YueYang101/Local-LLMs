@@ -65,16 +65,16 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             // ========================
             // HANDLE PLAIN_TEXT FIELD
             // ========================
-            if (jsonResponse.plain_text) {
-                const plainTextContainer = document.createElement("pre"); // Use <pre> to preserve formatting
-                plainTextContainer.classList.add("response-container");
-                plainTextContainer.textContent = jsonResponse.plain_text; // Display plain_text field
-                chatWindow.appendChild(plainTextContainer);
+            if (jsonResponse.html_response) {
+                const htmlContainer = document.createElement("div"); // Use <div> for rendering HTML content
+                htmlContainer.classList.add("response-container");
+                htmlContainer.innerHTML = jsonResponse.html_response; // Render HTML content from html_response
+                chatWindow.appendChild(htmlContainer);
             } else {
-                // Handle missing plain_text gracefully
+                // Handle missing html_response gracefully
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");
-                errorMessage.innerText = "Error: No plain_text content found in the response.";
+                errorMessage.innerText = "Error: No HTML content found in the response.";
                 chatWindow.appendChild(errorMessage);
             }
         } else {

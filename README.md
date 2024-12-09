@@ -6,4 +6,7 @@ With the pre-input prompts. The LLM is told the available local functions and th
 <br>
 For now, after the LLM know which functions will be used, it will reply with the trigger word to trigger the corresponding functions (this is what LLM_decision function does).
 
+
+Chain of thoughts
+Firstly, the llm should output the chain of actions in json format like this
 ## Local functions

@@ -55,9 +55,9 @@ async def handle_prompt(user_prompt: str = Form(...)):
         logging.debug(f"LLM decision result: {decision}")
 
         # Check if the decision is a dictionary with a plain_text field
-        if isinstance(decision, dict) and "plain_text" in decision:
+        if isinstance(decision, dict) and "html_response" in decision:
             return JSONResponse(content={
-                "plain_text": decision.get("plain_text"),  # Extract plain_text
+                "html_response": decision.get("html_response"),  # Extract plain_text
                 "detailed_info": decision.get("detailed_info", {})  # Pass the JSON structure if needed
             })
         else:

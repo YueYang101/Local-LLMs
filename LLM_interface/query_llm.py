@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %
 # AVAILABLE FUNCTIONS
 # ========================
 AVAILABLE_FUNCTIONS = {
-    "handle_path": "Detects if the given path is a file or folder and returns a response to choose between read_file function or list_folder function.",
+    "handle_path": "If the user only give a path, detects if the given path is a file or folder and returns a response to choose between read_file function or list_folder function.",
     "read_file": "Reads the contents of a file if user specify it is a file.",
     "write_file": "Writes or updates a file with given content.",
     "list_folder": "Lists the tree structure of a folder and provides detailed information about its contents when the user specifies it is a folder.",
@@ -30,7 +30,7 @@ API_URL = config.get("api_url", "http://localhost:11434/api/generate")
 
 
 # ========================
-# PREPROCESS PROMPT
+# PREPROCESS PROMPT with Function selection
 # ========================
 def preprocess_prompt_with_functions(user_prompt):
     """
@@ -111,3 +111,54 @@ def query_llm(api_url, model_name, prompt, stream=False):
     except requests.exceptions.RequestException as e:
         logging.error(f"Request failed: {e}")
         return f"Request failed: {e}"
+
+# ========================
+# QUERY LLM HTML Response
+# ========================
+def query_llm_html_response(api_url, model_name, prompt, stream=False):
+    """
+    Queries the API with a prompt, asking the LLM to generate an HTML-formatted response.
+    The HTML includes highlighted titles and formatted code blocks.
+
+    Args:
+        api_url (str): The API URL to query.
+        model_name (str): The name of the model to use.
+        prompt (str): The prompt to send to the LLM.
+        stream (bool): Whether to handle streamed responses.
+
+    Returns:
+        str: The LLM's response in HTML format.
+    """
+    # Add a pre-prompt to guide the LLM to format the output in HTML
+    pre_prompt = """
+    You are a data assistant. Your task is to respond with HTML-formatted content.
+    The output must include:
+    1. Titles highlighted using <h1>, <h2>, etc.
+    2. Code presented in <pre><code> blocks for formatting.
+    3. Explanations styled in <p> for clarity.
+    The HTML should be clean and well-structured.
+    """
+    full_prompt = f"{pre_prompt}\n\n{prompt}"
+
+    # Prepare the request payload
+    headers = {"Content-Type": "application/json"}
+    payload = {"model": model_name, "prompt": full_prompt, "stream": stream}
+
+    logging.info("Sending request to LLM for HTML-formatted response.")
+    logging.debug(f"Model: {model_name}, API URL: {api_url}")
+    logging.debug(f"Prompt: {full_prompt}")
+
+    try:
+        with requests.post(api_url, headers=headers, json=payload, stream=stream) as response:
+            response.raise_for_status()
+            if stream:
+                logging.info("Processing streamed response from LLM.")
+                return process_streamed_responses(response)
+            else:
+                llm_response = response.json().get("response", "No response generated.")
+                logging.info("Received response from LLM.")
+                logging.debug(f"LLM HTML Response: {llm_response}")
+                return llm_response
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request failed: {e}")
+        return f"<p><strong>Error:</strong> Request failed: {e}</p>"

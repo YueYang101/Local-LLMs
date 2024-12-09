@@ -3,9 +3,11 @@ from docx import Document
 import PyPDF2
 import json
 import logging
-from LLM_interface.query_llm import preprocess_prompt_with_functions, query_llm, API_URL, MODEL_NAME
+from LLM_interface.query_llm import preprocess_prompt_with_functions, query_llm, API_URL, MODEL_NAME, query_llm_html_response
+from PyPDF2 import PdfReader
+import docx
 
-# ========================
+# ========================uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 # LLM DECISION FUNCTION
 # ========================
 def llm_decision(user_prompt: str):
@@ -155,52 +157,86 @@ def handle_path(path):
 # READ FILE FUNCTION
 # ========================
 def read_file(path: str):
-    logging.info(f"Starting read_file function with path: {path}")
+    """
+    Reads a file and queries the LLM to explain the content in HTML format.
+
+    Args:
+        path (str): The path to the file.
+
+    Returns:
+        dict: JSON structure with 'html_response' (LLM response in HTML) and 'detailed_info' (file name and content).
+    """
+    logging.info(f"Starting read_file function for path: {path}")
+
     try:
+        # Log initial metadata setup
+        logging.debug("Initializing file metadata.")
         file_metadata = {
-            "path": path,
-            "file_name": os.path.basename(path),
-            "file_type": "",
+            "name": os.path.basename(path),
+            "contents": None
         }
 
-        content = None
+        # Log file type detection
         if path.endswith(".docx"):
-            logging.info("Detected .docx file.")
+            logging.info("Detected .docx file. Attempting to read content.")
             doc = Document(path)
-            content = "\n".join([para.text for para in doc.paragraphs])
+            file_metadata["contents"] = "\n".join([para.text for para in doc.paragraphs])
         elif path.endswith(".pdf"):
-            logging.info("Detected .pdf file.")
+            logging.info("Detected .pdf file. Attempting to read content.")
             pdf_text = ""
             with open(path, "rb") as pdf_file:
                 pdf_reader = PyPDF2.PdfReader(pdf_file)
                 for page in pdf_reader.pages:
                     pdf_text += page.extract_text()
-            content = pdf_text.strip()
+            file_metadata["contents"] = pdf_text.strip()
         elif path.endswith(".py"):
-            logging.info("Detected .py file.")
+            logging.info("Detected .py file. Attempting to read content.")
             with open(path, "r", encoding="utf-8") as file:
-                content = file.read()
-                file_metadata["line_count"] = content.count("\n") + 1
+                file_metadata["contents"] = file.read()
         else:
-            logging.warning("Unsupported file type.")
-            file_metadata["file_type"] = "unsupported"
+            logging.warning(f"Unsupported file type for: {path}")
             return {
-                "plain_text": f"Unsupported file type for reading: {path}",
-                "detailed_info": file_metadata,
+                "html_response": f"<p>Unsupported file type for reading: {file_metadata['name']}</p>",
+                "detailed_info": file_metadata
             }
 
-        if content is None:
+        # Log content extraction
+        if file_metadata["contents"] is None:
+            logging.error(f"Failed to extract content from file: {path}")
             raise Exception("Failed to extract file content.")
 
-        file_metadata["file_size"] = os.path.getsize(path)
-        logging.info("Successfully read file.")
-        return {"plain_text": content, "detailed_info": file_metadata}
+        logging.info(f"Successfully read content from file: {file_metadata['name']}")
+
+        # Log LLM query preparation
+        logging.info("Preparing to query the LLM with file content.")
+        enriched_prompt = f"Explain the following code:\n\n{file_metadata['contents']}"
+        logging.debug(f"Enriched Prompt:\n{enriched_prompt}")
+
+        # Query the LLM using the query_llm_html_response function
+        logging.info("Querying the LLM to explain the code in HTML format.")
+        llm_response_html = query_llm_html_response(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+        logging.debug(f"LLM HTML Response: {llm_response_html}")
+
+        # Log final response preparation
+        logging.info(f"LLM successfully explained the file: {file_metadata['name']}")
+
+        return {
+            "html_response": llm_response_html,  # Save the HTML response in the new key
+            "detailed_info": file_metadata
+        }
+
     except FileNotFoundError:
         logging.error(f"File not found: {path}")
-        return {"plain_text": f"Error: File not found at {path}", "detailed_info": {"path": path}}
+        return {
+            "html_response": f"<p>Error: File not found at {path}</p>",
+            "detailed_info": {"name": os.path.basename(path)}
+        }
     except Exception as e:
-        logging.error(f"Error reading file {path}: {e}")
-        return {"plain_text": f"Error reading file: {e}", "detailed_info": {"path": path}}
+        logging.error(f"Error occurred while processing file {path}: {e}")
+        return {
+            "html_response": f"<p>Error reading file: {e}</p>",
+            "detailed_info": {"name": os.path.basename(path)}
+        }
 
 # ========================
 # WRITE FILE FUNCTION
@@ -239,11 +275,6 @@ def write_file(path: str, content: str):
 # ========================
 # LIST FOLDER FUNCTION
 # ========================
-import os
-import logging
-from PyPDF2 import PdfReader
-import docx
-
 def list_folder(path: str) -> dict:
     """
     Lists the structure of the last folder in the given path.
@@ -273,7 +304,7 @@ def list_folder(path: str) -> dict:
                 return "\n".join(paragraph.text for paragraph in doc.paragraphs)
 
             elif ext in {'.txt', '.py', '.js', '.html', '.md'}:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     return f.read()
 
             return "Unsupported file type for preview."
@@ -349,7 +380,7 @@ def list_folder(path: str) -> dict:
     try:
         last_folder_name = os.path.basename(os.path.abspath(path))
         logging.debug(f"Processing root folder: {last_folder_name}")
-        plain_text_tree = f"{last_folder_name}/\n"
+        plain_text_tree = f"The tree structure of the folder is:\n{last_folder_name}/\n"
         json_tree = []
 
         for item in sorted(os.listdir(path)):
