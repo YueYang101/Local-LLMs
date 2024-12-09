@@ -18,7 +18,7 @@ def llm_decision(user_prompt: str):
         user_prompt (str): The user's input describing the task.
 
     Returns:
-        dict: JSON-like structure with 'plain_text' and 'detailed_info'.
+        dict: JSON-like structure with 'html_response' and 'detailed_info'.
     """
     logging.info("Starting llm_decision function.")
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
@@ -60,7 +60,7 @@ def llm_decision(user_prompt: str):
                 action_parameters = action_response.get("parameters", [])
                 if not isinstance(action_functions, list) or not isinstance(action_parameters, list):
                     results.append({
-                        "plain_text": "Error: Invalid structure from handle_path.",
+                        "html_response": f"<p>Error: Invalid structure from handle_path for path {path}.</p>",
                         "detailed_info": {"path": path},
                     })
                     continue
@@ -73,7 +73,7 @@ def llm_decision(user_prompt: str):
                         results.append(list_folder(**action_param))
                     else:
                         results.append({
-                            "plain_text": f"Error: Unknown action '{action_func}' from handle_path.",
+                            "html_response": f"<p>Error: Unknown action '{action_func}' from handle_path.</p>",
                             "detailed_info": {"path": path},
                         })
             elif func == "read_file":
@@ -85,26 +85,29 @@ def llm_decision(user_prompt: str):
             else:
                 logging.warning(f"Unknown function '{func}' encountered.")
                 results.append({
-                    "plain_text": f"Error: Unknown function '{func}' requested by the LLM.",
+                    "html_response": f"<p>Error: Unknown function '{func}' requested by the LLM.</p>",
                     "detailed_info": {},
                 })
 
-        # Combine results
-        combined_plain_text = "\n\n".join([res["plain_text"] for res in results if "plain_text" in res])
+        # Combine results into HTML format
+        combined_html_response = "".join([res["html_response"] for res in results if "html_response" in res])
         combined_detailed_info = [res.get("detailed_info", {}) for res in results]
 
         logging.info("Successfully processed all functions.")
         return {
-            "plain_text": combined_plain_text,
+            "html_response": combined_html_response,
             "detailed_info": combined_detailed_info,
         }
     except json.JSONDecodeError:
         logging.error("Error decoding LLM response as JSON.")
-        return {"plain_text": llm_response.strip(), "detailed_info": {}}
+        return {
+            "html_response": f"<p>{llm_response.strip()}</p>",
+            "detailed_info": {},
+        }
     except Exception as e:
         logging.error(f"Error in llm_decision function: {e}")
         return {
-            "plain_text": f"Error executing function: {e}",
+            "html_response": f"<p>Error executing function: {e}</p>",
             "detailed_info": {},
         }
 
@@ -176,23 +179,35 @@ def read_file(path: str):
             "contents": None
         }
 
-        # Log file type detection
+        # Log file type detection and content extraction
         if path.endswith(".docx"):
             logging.info("Detected .docx file. Attempting to read content.")
-            doc = Document(path)
-            file_metadata["contents"] = "\n".join([para.text for para in doc.paragraphs])
+            try:
+                doc = Document(path)
+                file_metadata["contents"] = "\n".join([para.text for para in doc.paragraphs])
+            except Exception as e:
+                logging.error(f"Error reading .docx file: {e}")
+                raise
         elif path.endswith(".pdf"):
             logging.info("Detected .pdf file. Attempting to read content.")
-            pdf_text = ""
-            with open(path, "rb") as pdf_file:
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                for page in pdf_reader.pages:
-                    pdf_text += page.extract_text()
-            file_metadata["contents"] = pdf_text.strip()
+            try:
+                pdf_text = ""
+                with open(path, "rb") as pdf_file:
+                    pdf_reader = PyPDF2.PdfReader(pdf_file)
+                    for page in pdf_reader.pages:
+                        pdf_text += page.extract_text()
+                file_metadata["contents"] = pdf_text.strip()
+            except Exception as e:
+                logging.error(f"Error reading .pdf file: {e}")
+                raise
         elif path.endswith(".py"):
             logging.info("Detected .py file. Attempting to read content.")
-            with open(path, "r", encoding="utf-8") as file:
-                file_metadata["contents"] = file.read()
+            try:
+                with open(path, "r", encoding="utf-8") as file:
+                    file_metadata["contents"] = file.read()
+            except Exception as e:
+                logging.error(f"Error reading .py file: {e}")
+                raise
         else:
             logging.warning(f"Unsupported file type for: {path}")
             return {
@@ -200,14 +215,14 @@ def read_file(path: str):
                 "detailed_info": file_metadata
             }
 
-        # Log content extraction
+        # Check if content extraction was successful
         if file_metadata["contents"] is None:
             logging.error(f"Failed to extract content from file: {path}")
             raise Exception("Failed to extract file content.")
 
         logging.info(f"Successfully read content from file: {file_metadata['name']}")
 
-        # Log LLM query preparation
+        # Prepare the enriched prompt
         logging.info("Preparing to query the LLM with file content.")
         enriched_prompt = f"Explain the following code:\n\n{file_metadata['contents']}"
         logging.debug(f"Enriched Prompt:\n{enriched_prompt}")
@@ -215,9 +230,12 @@ def read_file(path: str):
         # Query the LLM using the query_llm_html_response function
         logging.info("Querying the LLM to explain the code in HTML format.")
         llm_response_html = query_llm_html_response(API_URL, MODEL_NAME, enriched_prompt, stream=False)
-        logging.debug(f"LLM HTML Response: {llm_response_html}")
 
-        # Log final response preparation
+        # Safeguard for missing HTML response
+        if not llm_response_html:
+            logging.warning("LLM did not return a valid 'html_response'. Using fallback.")
+            llm_response_html = f"<p>No explanation available for the file: {file_metadata['name']}.</p>"
+
         logging.info(f"LLM successfully explained the file: {file_metadata['name']}")
 
         return {

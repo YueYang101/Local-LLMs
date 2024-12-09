@@ -75,7 +75,12 @@ async def handle_prompt(user_prompt: str = Form(...)):
             # Log missing 'html_response' key
             logging.warning("'html_response' key not found in LLM decision result.")
             logging.debug(f"Fallback decision content: {decision}")
-            return JSONResponse(content={"result": decision})
+            # Create a fallback HTML response
+            fallback_html = f"<p>{decision.get('plain_text', 'No content available.')}</p>"
+            return JSONResponse(content={
+                "html_response": fallback_html,
+                "detailed_info": decision.get("detailed_info", {})
+            })
     except ValueError as ve:
         logging.error(f"ValueError during processing: {ve}")
         return JSONResponse(content={"error": f"Invalid response format: {ve}"}, status_code=500)

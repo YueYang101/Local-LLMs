@@ -118,7 +118,8 @@ def query_llm(api_url, model_name, prompt, stream=False):
 def query_llm_html_response(api_url, model_name, prompt, stream=False):
     """
     Queries the API with a prompt, asking the LLM to generate an HTML-formatted response.
-    The HTML includes highlighted titles and formatted code blocks.
+    The HTML includes highlighted titles, formatted code blocks, and enhanced features
+    like a black background, copy button, and code type display.
 
     Args:
         api_url (str): The API URL to query.
@@ -129,14 +130,18 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
     Returns:
         str: The LLM's response in HTML format.
     """
-    # Add a pre-prompt to guide the LLM to format the output in HTML
+    # Add a pre-prompt to guide the LLM to format the output in enhanced HTML
     pre_prompt = """
     You are a data assistant. Your task is to respond with HTML-formatted content.
     The output must include:
     1. Titles highlighted using <h1>, <h2>, etc.
-    2. Code presented in <pre><code> blocks for formatting.
-    3. Explanations styled in <p> for clarity.
-    The HTML should be clean and well-structured.
+    2. Code presented in <div class="code-container"> blocks for formatting.
+    3. Each code block should include:
+        a. Full black background.
+        b. Code type displayed above the code block in a <span> with the class "code-language".
+        c. A "Copy" button at the top right using <button> with the class "copy-button".
+    4. Explanations styled in <p> for clarity.
+    5. Ensure the HTML is clean, well-structured, and uses consistent class names for styling.
     """
     full_prompt = f"{pre_prompt}\n\n{prompt}"
 
@@ -144,7 +149,7 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": full_prompt, "stream": stream}
 
-    logging.info("Sending request to LLM for HTML-formatted response.")
+    logging.info("Sending request to LLM for enhanced HTML-formatted response.")
     logging.debug(f"Model: {model_name}, API URL: {api_url}")
     logging.debug(f"Prompt: {full_prompt}")
 
@@ -157,7 +162,7 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
             else:
                 llm_response = response.json().get("response", "No response generated.")
                 logging.info("Received response from LLM.")
-                logging.debug(f"LLM HTML Response: {llm_response}")
+                logging.debug(f"Enhanced LLM HTML Response: {llm_response}")
                 return llm_response
     except requests.exceptions.RequestException as e:
         logging.error(f"Request failed: {e}")

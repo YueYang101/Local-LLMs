@@ -21,24 +21,52 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     const userInput = document.getElementById("user-input");
     const chatWindow = document.getElementById("chat-window");
 
-    // Store the input value in a temporary variable
     const inputValue = userInput.value.trim(); // Trim whitespace
     if (DEBUG_MODE) console.debug("Form submission detected. User input:", inputValue);
 
     if (!inputValue) {
-        // If input is empty, do nothing
         if (DEBUG_MODE) console.warn("No input provided. Skipping submission.");
         return;
     }
 
-    // Clear the input field after capturing the value
     userInput.value = "";
     if (DEBUG_MODE) console.debug("Input field cleared.");
 
-    // Add the user's message to the chat window
+    // Add user's message to chat window
     const userMessage = document.createElement("div");
     userMessage.classList.add("message", "user");
     userMessage.innerText = inputValue;
+
+    // Create a container for hover actions (copy and re-input)
+    const userActions = document.createElement("div");
+    userActions.classList.add("message-actions");
+
+    const copyButton = document.createElement("button");
+    copyButton.innerText = "Copy";
+    copyButton.classList.add("action-button");
+    copyButton.onclick = () => navigator.clipboard.writeText(inputValue);
+
+    const reInputButton = document.createElement("button");
+    reInputButton.innerText = "Re-input";
+    reInputButton.classList.add("action-button");
+    reInputButton.onclick = () => {
+        userInput.value = inputValue;
+        resetInputHeight();
+    };
+
+    userActions.appendChild(copyButton);
+    userActions.appendChild(reInputButton);
+    userMessage.appendChild(userActions);
+
+    // Add hover effect to show actions
+    userMessage.addEventListener("mouseenter", () => {
+        userActions.style.display = "flex"; // Show actions on hover
+    });
+    userMessage.addEventListener("mouseleave", () => {
+        userActions.style.display = "none"; // Hide actions when not hovering
+    });
+
+    userActions.style.display = "none"; // Initially hide the actions
     chatWindow.appendChild(userMessage);
     if (DEBUG_MODE) console.debug("User message appended to chat window:", inputValue);
 
@@ -49,13 +77,12 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     progressBar.classList.add("progress-bar");
     progressBarContainer.appendChild(progressBar);
     chatWindow.appendChild(progressBarContainer);
-    if (DEBUG_MODE) console.debug("Progress bar added to chat window.");
 
     // Scroll to the bottom of the chat window
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
     try {
-        // Make a POST request to the /handle-prompt/ endpoint
+        // Make a POST request to the server
         if (DEBUG_MODE) console.debug("Sending POST request to /handle-prompt/ endpoint.");
         const response = await fetch("/handle-prompt/", {
             method: "POST",
@@ -66,28 +93,21 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
         });
 
         if (response.ok) {
-            const jsonResponse = await response.json(); // Parse JSON response
+            const jsonResponse = await response.json();
             if (DEBUG_MODE) console.debug("Response from server:", jsonResponse);
 
-            // ========================
-            // HANDLE PLAIN_TEXT FIELD
-            // ========================
             if (jsonResponse.html_response) {
-                if (DEBUG_MODE) console.debug("HTML response received. Rendering content.");
-                const htmlContainer = document.createElement("div"); // Use <div> for rendering HTML content
+                const htmlContainer = document.createElement("div");
                 htmlContainer.classList.add("response-container");
-                htmlContainer.innerHTML = jsonResponse.html_response; // Render HTML content from html_response
+                htmlContainer.innerHTML = jsonResponse.html_response;
                 chatWindow.appendChild(htmlContainer);
             } else {
-                // Handle missing html_response gracefully
-                if (DEBUG_MODE) console.error("No html_response found in server response.");
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");
                 errorMessage.innerText = "Error: No HTML content found in the response.";
                 chatWindow.appendChild(errorMessage);
             }
         } else {
-            // Handle HTTP errors
             throw new Error(`Server returned status ${response.status}`);
         }
     } catch (error) {
@@ -98,16 +118,9 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
         errorMessage.innerText = "Error: Unable to process your request.";
         chatWindow.appendChild(errorMessage);
     } finally {
-        // Remove the progress bar
         progressBarContainer.remove();
-        if (DEBUG_MODE) console.debug("Progress bar removed.");
-
-        // Reset the input field's height after submission
         resetInputHeight();
-
-        // Scroll to the bottom of the chat window
         chatWindow.scrollTop = chatWindow.scrollHeight;
-        if (DEBUG_MODE) console.debug("Scrolled to the bottom of the chat window.");
     }
 });
 
@@ -115,32 +128,16 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
 // DYNAMIC INPUT RESIZING
 // ========================
 const userInput = document.getElementById("user-input");
+const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight);
+const maxHeight = 200;
+const initialHeight = userInput.scrollHeight;
 
-// Calculate line height from CSS and set defaults
-const lineHeight = parseFloat(window.getComputedStyle(userInput).lineHeight); // Get line height from CSS
-const maxHeight = 200; // Maximum height limit
-if (DEBUG_MODE) console.debug("Calculated lineHeight and maxHeight:", lineHeight, maxHeight);
-
-// Save the initial height of the input field
-const initialHeight = userInput.scrollHeight; // Save the initial scrollHeight
-if (DEBUG_MODE) console.debug("Initial input field height:", initialHeight);
-
-// Set the initial height explicitly based on scrollHeight
 userInput.style.height = `${initialHeight}px`;
-if (DEBUG_MODE) console.debug("Set initial height for input field.");
 
-// Add event listener for dynamic resizing
 userInput.addEventListener("input", () => {
-    if (DEBUG_MODE) console.debug("Input event detected. Resizing input field.");
-    // Temporarily reset height to auto to ensure scrollHeight reflects content height
     userInput.style.height = "auto";
-
-    // Calculate new height based on scrollHeight and limit it to maxHeight
     const newHeight = Math.min(userInput.scrollHeight, maxHeight);
-
-    // Update the height
     userInput.style.height = `${newHeight}px`;
-    if (DEBUG_MODE) console.debug("Updated input field height:", newHeight);
 });
 
 // ========================
@@ -150,13 +147,10 @@ userInput.addEventListener("keydown", (event) => {
     if (DEBUG_MODE) console.debug(`Keydown event detected: ${event.key}`);
     if (event.key === "Enter") {
         if (event.shiftKey) {
-            // Allow multiline input with Shift+Enter
             if (DEBUG_MODE) console.debug("Shift+Enter detected. Allowing multiline input.");
             return;
         } else {
-            // Prevent default Enter behavior and trigger form submission
             event.preventDefault();
-            if (DEBUG_MODE) console.debug("Enter key detected. Triggering form submission.");
             document.getElementById("chat-form").dispatchEvent(new Event("submit"));
         }
     }

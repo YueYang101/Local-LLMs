@@ -74,10 +74,13 @@ body {
     white-space: pre-wrap; /* Preserve newlines and whitespace */
 }
 
+/* Message styling */
 .message {
     margin-bottom: 10px;
     padding: 10px;
     border-radius: 8px;
+    position: relative; /* For absolute positioning of buttons */
+    transition: background-color 0.3s ease;
 }
 
 .message.user {
@@ -88,6 +91,41 @@ body {
 .message.bot {
     background-color: #444; /* Dark grey for bot */
     text-align: left;
+}
+
+/* Message hover effect */
+.message:hover {
+    background-color: #3f3f4f; /* Slightly lighter grey */
+}
+
+/* Dynamic action buttons for messages */
+.message-actions {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    display: none; /* Hidden by default */
+    gap: 5px; /* Space between buttons */
+}
+
+.message:hover .message-actions {
+    display: flex; /* Show buttons when hovering over message */
+}
+
+/* Action button styles */
+.action-button {
+    padding: 5px 10px;
+    background-color: #444; /* Match other button styles */
+    color: #f1f1f1;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+.action-button:hover {
+    background-color: #666; /* Lighter grey on hover */
 }
 
 /* Updated input field for dynamic resizing */
@@ -163,35 +201,11 @@ button:hover {
 .response-container {
     background-color: #1e1e2f; /* Dark background */
     border: 1px solid #444; /* Subtle border */
-    border-radius: 5px; 
+    border-radius: 5px;
     margin: 10px 0;
     padding: 10px;
     color: #f1f1f1; /* Light text color */
     font-family: monospace; /* Monospace for plain text display */
     white-space: pre-wrap; /* Preserve formatting for plain text */
     overflow-x: auto; /* Allow horizontal scrolling for long lines */
-}
-
-/* Copy button styles */
-.copy-button {
-    padding: 5px 10px;
-    background-color: #000; /* Full black button */
-    color: #f1f1f1; /* Light text */
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9em;
-    position: absolute;
-    right: 10px; /* Right-align */
-    top: 10px; /* Top-align */
-}
-
-.copy-button:hover {
-    background-color: #666; /* Lighter grey on hover */
-}
-
-.copy-button.copied {
-    background-color: #5cb85c; /* Green to indicate successful copy */
-    color: #fff;
-    font-weight: bold;
 }
