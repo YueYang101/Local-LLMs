@@ -13,6 +13,7 @@ AVAILABLE_FUNCTIONS = {
     "read_file": "Reads the contents of a file if user specify it is a file.",
     "write_file": "Writes or updates a file with given content.",
     "list_folder": "Lists the tree structure of a folder and provides detailed information about its contents when the user specifies it is a folder.",
+    "general_question": "Generates a marked response using special markers for titles, subtitles, and code blocks. This is triggered when the user asks a general question. The parameter should be /:/ to keep consistency"
 }
 
 # ========================
@@ -48,7 +49,7 @@ def preprocess_prompt_with_functions(user_prompt):
     - For file or folder operations, respond with the function names (in the order they should be executed) and their corresponding parameters in JSON format only.
     Your response **must strictly** follow the JSON format with the exact keys, structure and parameter names provided below:
     {{
-        "function": ["write_file", "read_file"],
+        "function": ["write_file", "read_file", "general_question"],
         "parameters": [
             {{
                 "path": "/path/to/file",
@@ -57,10 +58,11 @@ def preprocess_prompt_with_functions(user_prompt):
             {{
                 "path": "/path/to/file"
             }}
+            {{
+                "/": "/"
+            }}
         ]
     }}
-    
-    - For general questions, respond directly with the answer as plain text.
     """
     return f"{system_directive}\n\nUser Prompt: {user_prompt}"
 
@@ -86,7 +88,7 @@ def process_streamed_responses(response):
 # ========================
 # QUERY LLM
 # ========================
-def query_llm(api_url, model_name, prompt, stream=False):
+def query_llm_function_decision(api_url, model_name, prompt, stream=False):
     """
     Queries the API with a prompt and handles streamed responses for incremental updates.
     """
@@ -115,10 +117,10 @@ def query_llm(api_url, model_name, prompt, stream=False):
 # ========================
 # QUERY LLM and return Enhanced HTML Response
 # ========================
-def query_llm_html_response(api_url, model_name, prompt, stream=False):
+def query_llm_marked_response(api_url, model_name, prompt, stream=False):
     """
-    Queries the API with a prompt, asking the LLM to generate an HTML-formatted response.
-    The HTML includes enhanced formatting for code blocks, headings, and interactive features.
+    Queries the API with a prompt, asking the LLM to generate a marked plain-text response.
+    Titles, subtitles, and code blocks are marked with distinct identifiers.
 
     Args:
         api_url (str): The API URL to query.
@@ -127,52 +129,29 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
         stream (bool): Whether to handle streamed responses.
 
     Returns:
-        str: The LLM's response in HTML format.
+        str: The LLM's response in plain text with distinct markers.
     """
-    # Enhanced pre-prompt with detailed HTML generation instructions
+    # Enhanced pre-prompt with plain text markers
     pre_prompt = """
-    You are a data assistant tasked with generating a clean and professional HTML response. 
-    Ensure the following:
+    You are a data assistant tasked with generating a plain-text response. 
+    Use the following markers to identify sections and code blocks:
 
-    ### Headings and Titles:
-    - Use appropriate headings (<h1>, <h2>, <h3>, etc.) for clear organization.
-    - Ensure the main title uses <h1> and subsequent sections are appropriately nested.
+    ### Marking Guidelines:
+    1. **Titles**:
+       - Use `<<title>>` before the main title and `<<endtitle>>` after the title.
 
-    ### Code Blocks:
-    - Wrap each code snippet inside a <div class="code-container">.
-    - Include a <span class="code-language"> element at the top of the code block to indicate the programming language.
-    - Provide a "Copy" button inside the code block container, aligned to the top-right corner, using:
-        <button class="copy-button" onclick="copyToClipboard()">Copy</button>
-    - The code itself must be wrapped in <pre><code> tags for proper formatting.
-    - Ensure the "Copy" button functionality is clearly indicated for developers.
+    2. **Subtitles**:
+       - Use `<<subtitle>>` before a subtitle and `<<endsubtitle>>` after the subtitle.
 
-    ### Example Structure:
-    ```html
-    <div class="code-container">
-        <span class="code-language">Python</span>
-        <button class="copy-button" onclick="copyToClipboard()">Copy</button>
-        <pre><code>
-        # Example Python Code
-        def greet():
-            print("Hello, World!")
-        </code></pre>
-    </div>
-    ```
+    3. **Code Blocks**:
+       - Use `<<code>>` before the code block and `<<endcode>>` after the code block.
+       - Do not include formatting like indentation changes or HTML.
 
-    ### Explanations:
-    - Provide clear, concise, and readable explanations for each section or code snippet.
-    - Use <p> tags for explanations, and ensure the text is well-spaced and visually accessible.
+    4. **Explanations**:
+       - Write explanations as plain text without markers.
 
-    ### Styling Consistency:
-    - All HTML should follow semantic and clean formatting.
-    - Ensure indentation and closing tags are accurate.
-
-    ### Functionality and Usability:
-    - The "Copy" button must copy the content within the <pre><code> block.
-    - Include all necessary HTML attributes to ensure proper rendering.
-
-    ### Example Prompt:
-    Below is an example of a Python script. Explain the script in detail, include a heading, and render the code block with the "Copy" button:
+    ### Example Input:
+    Explain the following Python script and mark titles, subtitles, and code blocks:
     ```
     import math
 
@@ -181,21 +160,18 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
     ```
 
     ### Example Output:
-    ```html
-    <h1>Python Script Explanation</h1>
-    <p>This script defines a function to calculate the area of a circle given its radius.</p>
-    <div class="code-container">
-        <span class="code-language">Python</span>
-        <button class="copy-button" onclick="copyToClipboard()">Copy</button>
-        <pre><code>
-        import math
+    <<title>>Python Script Explanation<<endtitle>>
+    This script defines a function to calculate the area of a circle given its radius.
 
-        def calculate_circle_area(radius):
-            return math.pi * radius**2
-        </code></pre>
-    </div>
-    ```
-    Ensure the generated HTML is clean and ready to be rendered directly in a web application.
+    <<subtitle>>Code Implementation<<endsubtitle>>
+    <<code>>
+    import math
+
+    def calculate_circle_area(radius):
+        return math.pi * radius**2
+    <<endcode>>
+
+    Now, generate a response for the following input:
     """
     full_prompt = f"{pre_prompt}\n\n{prompt}"
 
@@ -203,7 +179,7 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": full_prompt, "stream": stream}
 
-    logging.info("Sending request to LLM for enhanced HTML-formatted response.")
+    logging.info("Sending request to LLM for marked plain-text response.")
     logging.debug(f"Model: {model_name}, API URL: {api_url}")
     logging.debug(f"Prompt: {full_prompt}")
 
@@ -216,8 +192,25 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
             else:
                 llm_response = response.json().get("response", "No response generated.")
                 logging.info("Received response from LLM.")
-                logging.debug(f"Enhanced LLM HTML Response: {llm_response}")
+                logging.debug(f"Marked Plain-Text Response: {llm_response}")
                 return llm_response
     except requests.exceptions.RequestException as e:
         logging.error(f"Request failed: {e}")
-        return f"<p><strong>Error:</strong> Request failed: {e}</p>"
+        return f"Error: Request failed: {e}"
+
+
+def convert_marked_to_html(marked_response):
+    """
+    Converts a marked response with <<title>>, <<subtitle>>, <<code>>, and <<endcode>> into HTML.
+    """
+    import re
+
+    html_output = marked_response
+    html_output = re.sub(r"<<title>>(.*?)<<subtitle>>", r"<h1>\1</h1>", html_output)
+    html_output = re.sub(r"<<subtitle>>(.*?)<<code>>", r"<h2>\1</h2>", html_output)
+    html_output = re.sub(r"<<code>>", r"<pre><code>", html_output)
+    html_output = re.sub(r"<<endcode>>", r"</code></pre>", html_output)
+    
+    # Ensure proper handling of any extra markers
+    html_output = html_output.replace("<<title>>", "").replace("<<subtitle>>", "")
+    return html_output

@@ -13,6 +13,19 @@ function resetInputHeight() {
 }
 
 // ========================
+// COPY TO CLIPBOARD FUNCTION
+// ========================
+function copyToClipboard(content) {
+    navigator.clipboard.writeText(content)
+        .then(() => {
+            console.debug("Copied to clipboard!");
+        })
+        .catch((err) => {
+            console.error("Failed to copy to clipboard:", err);
+        });
+}
+
+// ========================
 // FORM SUBMISSION EVENT HANDLER
 // ========================
 document.getElementById("chat-form").addEventListener("submit", async (event) => {
@@ -44,7 +57,7 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     const copyButton = document.createElement("button");
     copyButton.innerText = "Copy";
     copyButton.classList.add("action-button");
-    copyButton.onclick = () => navigator.clipboard.writeText(inputValue);
+    copyButton.onclick = () => copyToClipboard(inputValue);
 
     const reInputButton = document.createElement("button");
     reInputButton.innerText = "Re-input";

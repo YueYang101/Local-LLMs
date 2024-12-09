@@ -1,13 +1,15 @@
+# uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+
 import os
 from docx import Document
 import PyPDF2
 import json
 import logging
-from LLM_interface.query_llm import preprocess_prompt_with_functions, query_llm, API_URL, MODEL_NAME, query_llm_html_response
+from LLM_interface.query_llm import preprocess_prompt_with_functions, query_llm_function_decision, API_URL, MODEL_NAME, query_llm_marked_response, convert_marked_to_html
 from PyPDF2 import PdfReader
 import docx
 
-# ========================uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+# ========================
 # LLM DECISION FUNCTION
 # ========================
 def llm_decision(user_prompt: str):
@@ -23,7 +25,7 @@ def llm_decision(user_prompt: str):
     logging.info("Starting llm_decision function.")
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
     logging.debug(f"Enriched prompt: {enriched_prompt}")
-    llm_response = query_llm(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+    llm_response = query_llm_function_decision(API_URL, MODEL_NAME, enriched_prompt, stream=False)
     logging.debug(f"LLM Response: {llm_response}")
 
     try:
@@ -82,6 +84,9 @@ def llm_decision(user_prompt: str):
                 results.append(write_file(**param))
             elif func == "list_folder":
                 results.append(list_folder(**param))
+            elif func == "general_question":
+                # Process general questions using the general_question function
+                results.append(general_question(user_prompt))
             else:
                 logging.warning(f"Unknown function '{func}' encountered.")
                 results.append({
@@ -229,7 +234,7 @@ def read_file(path: str):
 
         # Query the LLM using the query_llm_html_response function
         logging.info("Querying the LLM to explain the code in HTML format.")
-        llm_response_html = query_llm_html_response(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+        llm_response_html = general_question(API_URL, MODEL_NAME, enriched_prompt, stream=False)
 
         # Safeguard for missing HTML response
         if not llm_response_html:
@@ -424,3 +429,31 @@ def list_folder(path: str) -> dict:
             "plain_text": "",
             "detailed_info": {"error": f"Error reading folder: {e}"}
         }
+    
+# ========================
+# General Question with HTML conversion
+# ========================
+def general_question(user_prompt):
+    """
+    Handles general knowledge questions by querying the LLM and converting marked responses to HTML.
+
+    Args:
+        user_prompt (str): The user's input describing the question.
+
+    Returns:
+        dict: JSON-like structure with 'html_response' and 'detailed_info'.
+    """
+    logging.info("Handling general question.")
+    
+    # Query the LLM for marked response
+    marked_response = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=False)
+    logging.debug(f"Marked LLM Response: {marked_response}")
+
+    # Convert marked response to HTML
+    html_response = convert_marked_to_html(marked_response)
+    logging.debug(f"Converted HTML Response: {html_response}")
+
+    return {
+        "html_response": html_response,
+        "detailed_info": {"type": "general_question", "prompt": user_prompt},
+    }

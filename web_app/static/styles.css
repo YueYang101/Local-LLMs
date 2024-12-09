@@ -142,8 +142,8 @@ textarea {
     margin-right: 10px;
     border: 1px solid #555; /* Subtle border */
     border-radius: 5px;
-    background-color: #1e1e2f; /* Match page background */
-    color: #f1f1f1; /* Light text color */
+    background-color: #f9f9f9; /* Light background for input field */
+    color: #1e1e2f; /* Dark text color for readability */
     font-size: 16px; /* Larger font size for better readability */
     resize: none; /* Disable manual resizing */
     overflow-y: hidden; /* Prevent vertical overflow */
