@@ -101,6 +101,22 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
                 htmlContainer.classList.add("response-container");
                 htmlContainer.innerHTML = jsonResponse.html_response;
                 chatWindow.appendChild(htmlContainer);
+
+                // Add functionality for dynamically generated copy buttons
+                const copyButtons = htmlContainer.querySelectorAll(".copy-button");
+                copyButtons.forEach((button) => {
+                    button.addEventListener("click", () => {
+                        const codeBlock = button.nextElementSibling; // Assuming button is before <pre><code>
+                        if (codeBlock) {
+                            navigator.clipboard.writeText(codeBlock.innerText)
+                                .then(() => {
+                                    button.innerText = "Copied!";
+                                    setTimeout(() => (button.innerText = "Copy"), 2000);
+                                })
+                                .catch((err) => console.error("Failed to copy:", err));
+                        }
+                    });
+                });
             } else {
                 const errorMessage = document.createElement("div");
                 errorMessage.classList.add("message", "bot");

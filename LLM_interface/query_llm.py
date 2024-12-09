@@ -113,12 +113,12 @@ def query_llm(api_url, model_name, prompt, stream=False):
         return f"Request failed: {e}"
 
 # ========================
-# QUERY LLM HTML Response
+# QUERY LLM and return Enhanced HTML Response
 # ========================
 def query_llm_html_response(api_url, model_name, prompt, stream=False):
     """
     Queries the API with a prompt, asking the LLM to generate an HTML-formatted response.
-    The HTML includes enhanced formatting for code blocks with proper styling and features.
+    The HTML includes enhanced formatting for code blocks, headings, and interactive features.
 
     Args:
         api_url (str): The API URL to query.
@@ -129,40 +129,73 @@ def query_llm_html_response(api_url, model_name, prompt, stream=False):
     Returns:
         str: The LLM's response in HTML format.
     """
-    # Enhanced pre-prompt with precise layout instructions
+    # Enhanced pre-prompt with detailed HTML generation instructions
     pre_prompt = """
-    You are a data assistant. Your task is to generate an HTML-formatted response with the following requirements:
-    
-    1. **Titles and Headings**:
-       - Use <h1>, <h2>, etc., to highlight sections and subsections.
+    You are a data assistant tasked with generating a clean and professional HTML response. 
+    Ensure the following:
 
-    2. **Code Blocks**:
-       - Wrap all code inside a <div class="code-container">.
-       - Use a black background for the code block.
-       - Display the code type (e.g., Python, JavaScript) above the code block in a <span class="code-language"> element.
-       - Add a "Copy" button at the top-right corner of the code block using a <button class="copy-button"> element.
-       - Ensure the "Copy" button is functional (i.e., when clicked, it copies the code to the clipboard).
+    ### Headings and Titles:
+    - Use appropriate headings (<h1>, <h2>, <h3>, etc.) for clear organization.
+    - Ensure the main title uses <h1> and subsequent sections are appropriately nested.
 
-    3. **Button Styling**:
-       - Place the "Copy" button inside the code block container and align it to the top-right corner.
-       - Use proper padding and margin so the button doesn’t overlap with the code.
+    ### Code Blocks:
+    - Wrap each code snippet inside a <div class="code-container">.
+    - Include a <span class="code-language"> element at the top of the code block to indicate the programming language.
+    - Provide a "Copy" button inside the code block container, aligned to the top-right corner, using:
+        <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+    - The code itself must be wrapped in <pre><code> tags for proper formatting.
+    - Ensure the "Copy" button functionality is clearly indicated for developers.
 
-    4. **Explanations**:
-       - Provide detailed textual explanations styled in <p> tags.
-
-    5. **Clean and Well-Structured HTML**:
-       - Ensure proper indentation and semantic HTML structure.
-       - Use consistent class names to allow easy CSS styling.
-
-    Example HTML structure for a code block:
+    ### Example Structure:
+    ```html
     <div class="code-container">
         <span class="code-language">Python</span>
         <button class="copy-button" onclick="copyToClipboard()">Copy</button>
         <pre><code>
-        # Sample Python Code
-        print("Hello, World!")
+        # Example Python Code
+        def greet():
+            print("Hello, World!")
         </code></pre>
     </div>
+    ```
+
+    ### Explanations:
+    - Provide clear, concise, and readable explanations for each section or code snippet.
+    - Use <p> tags for explanations, and ensure the text is well-spaced and visually accessible.
+
+    ### Styling Consistency:
+    - All HTML should follow semantic and clean formatting.
+    - Ensure indentation and closing tags are accurate.
+
+    ### Functionality and Usability:
+    - The "Copy" button must copy the content within the <pre><code> block.
+    - Include all necessary HTML attributes to ensure proper rendering.
+
+    ### Example Prompt:
+    Below is an example of a Python script. Explain the script in detail, include a heading, and render the code block with the "Copy" button:
+    ```
+    import math
+
+    def calculate_circle_area(radius):
+        return math.pi * radius**2
+    ```
+
+    ### Example Output:
+    ```html
+    <h1>Python Script Explanation</h1>
+    <p>This script defines a function to calculate the area of a circle given its radius.</p>
+    <div class="code-container">
+        <span class="code-language">Python</span>
+        <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+        <pre><code>
+        import math
+
+        def calculate_circle_area(radius):
+            return math.pi * radius**2
+        </code></pre>
+    </div>
+    ```
+    Ensure the generated HTML is clean and ready to be rendered directly in a web application.
     """
     full_prompt = f"{pre_prompt}\n\n{prompt}"
 
