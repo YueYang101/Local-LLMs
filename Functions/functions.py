@@ -13,15 +13,6 @@ import docx
 # LLM DECISION FUNCTION
 # ========================
 def llm_decision(user_prompt: str):
-    """
-    Handles the LLM decision-making process and executes the chosen function(s).
-
-    Args:
-        user_prompt (str): The user's input describing the task.
-
-    Returns:
-        dict: JSON-like structure with 'html_response' and 'detailed_info'.
-    """
     logging.info("Starting llm_decision function.")
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
     logging.debug(f"Enriched prompt: {enriched_prompt}")
@@ -29,46 +20,35 @@ def llm_decision(user_prompt: str):
     logging.debug(f"LLM Response: {llm_response}")
 
     try:
-        # Attempt to parse the LLM response strictly as JSON
+        # Parse LLM response as JSON
         response_data = json.loads(llm_response)
         logging.info("Successfully parsed LLM response as JSON.")
 
         # Extract functions and parameters
-        functions = response_data.get("function")
+        functions = response_data.get("function", [])
         parameters = response_data.get("parameters", [])
 
-        # Ensure functions is a list
+        # Ensure correct format for functions and parameters
         if isinstance(functions, str):
             functions = [functions]
-        elif not isinstance(functions, list):
-            raise ValueError("Invalid format for 'function'. Expected string or list.")
-
-        # Ensure parameters is a list matching the number of functions
         if isinstance(parameters, dict):
-            parameters = [parameters]  # Convert single dict to list for consistency
+            parameters = [parameters]
+
         if len(functions) != len(parameters):
             raise ValueError("Mismatch between number of functions and parameters.")
 
-        # Process functions in order
+        # Process functions and store results
         results = []
         for func, param in zip(functions, parameters):
             logging.info(f"Processing function: {func} with parameters: {param}")
-            path = param.get("path") if "path" in param else None  # Extract path if available
+            path = param.get("path") if "path" in param else None
 
             if func == "handle_path":
                 action_response = handle_path(path)
 
-                # Ensure action_response structure matches the expected format
+                # Process nested actions returned by handle_path
                 action_functions = action_response.get("function", [])
                 action_parameters = action_response.get("parameters", [])
-                if not isinstance(action_functions, list) or not isinstance(action_parameters, list):
-                    results.append({
-                        "html_response": f"<p>Error: Invalid structure from handle_path for path {path}.</p>",
-                        "detailed_info": {"path": path},
-                    })
-                    continue
-
-                # Process the actions returned by handle_path
                 for action_func, action_param in zip(action_functions, action_parameters):
                     if action_func == "read_file":
                         results.append(read_file(**action_param))
@@ -76,7 +56,7 @@ def llm_decision(user_prompt: str):
                         results.append(list_folder(**action_param))
                     else:
                         results.append({
-                            "html_response": f"<p>Error: Unknown action '{action_func}' from handle_path.</p>",
+                            "plain_text_response": f"Error: Unknown action '{action_func}'",
                             "detailed_info": {"path": path},
                         })
             elif func == "read_file":
@@ -86,32 +66,32 @@ def llm_decision(user_prompt: str):
             elif func == "list_folder":
                 results.append(list_folder(**param))
             elif func == "general_question":
-                # Process general questions using the general_question function
-                results.append(general_question(user_prompt))
+                # Save the plain-text response
+                plain_text_response = general_question(user_prompt)
+                results.append({"plain_text_response": plain_text_response, "detailed_info": {}})
             else:
                 logging.warning(f"Unknown function '{func}' encountered.")
                 results.append({
-                    "html_response": f"<p>Error: Unknown function '{func}' requested by the LLM.</p>",
+                    "plain_text_response": f"Error: Unknown function '{func}'",
                     "detailed_info": {},
                 })
 
-        # Combine results into HTML format
+        # Convert plain-text responses to HTML
         combined_html_response = ""
         combined_detailed_info = []
 
         for res in results:
             if isinstance(res, dict):
-                # Access nested 'html_response'
-                if "html_response" in res and isinstance(res["html_response"], dict):
-                    combined_html_response += res["html_response"].get("html_response", "")
-                else:
-                    logging.warning(f"Skipping invalid 'html_response' in result: {res}")
+                # Extract and convert plain text to HTML
+                plain_text_response = res.get("plain_text_response", "")
+                if plain_text_response:
+                    html_response = convert_marked_to_html(plain_text_response)
+                    combined_html_response += html_response
 
-                # Access nested 'detailed_info'
-                if "html_response" in res and isinstance(res["html_response"], dict):
-                    combined_detailed_info.append(res["html_response"].get("detailed_info", {}))
-                else:
-                    logging.warning(f"Skipping invalid 'detailed_info' in result: {res}")
+                # Collect detailed info
+                detailed_info = res.get("detailed_info", {})
+                if detailed_info:
+                    combined_detailed_info.append(detailed_info)
             else:
                 logging.warning(f"Skipping invalid result format: {res}")
 
@@ -136,7 +116,7 @@ def llm_decision(user_prompt: str):
             "html_response": f"<p>Error executing function: {e}</p>",
             "detailed_info": {},
         }
-
+    
 # ========================
 # HANDLE PATH FUNCTION
 # ========================
@@ -187,13 +167,14 @@ def handle_path(path):
 # ========================
 def read_file(path: str):
     """
-    Reads a file and queries the LLM to explain the content in HTML format.
+    Reads a file and queries the LLM to explain the content in marked plain-text format.
 
     Args:
         path (str): The path to the file.
 
     Returns:
-        dict: JSON structure with 'html_response' (LLM response in HTML) and 'detailed_info' (file name and content).
+        dict: JSON structure with 'plain_text_response' (LLM response in plain text)
+              and 'detailed_info' (file name and content).
     """
     logging.info(f"Starting read_file function for path: {path}")
 
@@ -245,7 +226,7 @@ def read_file(path: str):
         else:
             logging.warning(f"Unsupported file type for: {path}")
             return {
-                "html_response": f"<p>Unsupported file type for reading: {file_metadata['name']}</p>",
+                "plain_text_response": f"Unsupported file type: {file_metadata['name']}",
                 "detailed_info": file_metadata
             }
 
@@ -262,44 +243,26 @@ def read_file(path: str):
         logging.debug(f"Enriched Prompt:\n{enriched_prompt}")
 
         # Query the LLM for marked plain-text response
-        logging.info("Querying the LLM to explain the content in marked format.")
+        logging.info("Querying the LLM for marked plain-text explanation.")
         llm_response_marked = general_question(enriched_prompt)
 
-        # Handle nested 'html_response' key if present
-        if isinstance(llm_response_marked, dict) and "html_response" in llm_response_marked:
-            llm_response_marked = llm_response_marked["html_response"]
-
-        # Ensure llm_response_marked is a string
-        if not isinstance(llm_response_marked, str):
-            logging.warning("LLM did not return a valid response. Using fallback.")
-            llm_response_marked = f"No explanation available for the file: {file_metadata['name']}."
-
-        # Convert marked response to HTML
-        logging.info("Converting LLM response to HTML format.")
-        llm_response_html = convert_marked_to_html(llm_response_marked)
-
-        # Safeguard for empty HTML response
-        if not llm_response_html.strip():
-            logging.warning("Converted HTML response is empty. Using fallback.")
-            llm_response_html = f"<p>No explanation available for the file: {file_metadata['name']}.</p>"
-
+        # Return plain text response and detailed info
         logging.info(f"LLM successfully explained the file: {file_metadata['name']}")
-
         return {
-            "html_response": llm_response_html,  # Save the final HTML response
+            "plain_text_response": llm_response_marked,
             "detailed_info": file_metadata
         }
 
     except FileNotFoundError:
         logging.error(f"File not found: {path}")
         return {
-            "html_response": f"<p>Error: File not found at {path}</p>",
+            "plain_text_response": f"Error: File not found at {path}",
             "detailed_info": {"name": os.path.basename(path)}
         }
     except Exception as e:
         logging.error(f"Error occurred while processing file {path}: {e}")
         return {
-            "html_response": f"<p>Error reading file: {e}</p>",
+            "plain_text_response": f"Error reading file: {e}",
             "detailed_info": {"name": os.path.basename(path)}
         }
     
