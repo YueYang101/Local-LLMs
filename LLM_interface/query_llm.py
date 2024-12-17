@@ -59,7 +59,7 @@ def preprocess_prompt_with_functions(user_prompt):
                 "path": "/path/to/file"
             }}
             {{
-                "/": "/"
+                "general_question": "Answer of the question"
             }}
         ]
     }}

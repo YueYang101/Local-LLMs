@@ -96,8 +96,28 @@ def llm_decision(user_prompt: str):
                 })
 
         # Combine results into HTML format
-        combined_html_response = "".join([res["html_response"] for res in results if "html_response" in res])
-        combined_detailed_info = [res.get("detailed_info", {}) for res in results]
+        combined_html_response = ""
+        combined_detailed_info = []
+
+        for res in results:
+            if isinstance(res, dict):
+                # Access nested 'html_response'
+                if "html_response" in res and isinstance(res["html_response"], dict):
+                    combined_html_response += res["html_response"].get("html_response", "")
+                else:
+                    logging.warning(f"Skipping invalid 'html_response' in result: {res}")
+
+                # Access nested 'detailed_info'
+                if "html_response" in res and isinstance(res["html_response"], dict):
+                    combined_detailed_info.append(res["html_response"].get("detailed_info", {}))
+                else:
+                    logging.warning(f"Skipping invalid 'detailed_info' in result: {res}")
+            else:
+                logging.warning(f"Skipping invalid result format: {res}")
+
+        # Log final outputs
+        logging.debug(f"Combined HTML Response: {combined_html_response}")
+        logging.debug(f"Combined Detailed Info: {combined_detailed_info}")
 
         logging.info("Successfully processed all functions.")
         return {
@@ -214,6 +234,14 @@ def read_file(path: str):
             except Exception as e:
                 logging.error(f"Error reading .py file: {e}")
                 raise
+        elif path.endswith(".md") or file_metadata["name"].lower() == "readme.md":
+            logging.info("Detected .md (Markdown) file. Attempting to read content.")
+            try:
+                with open(path, "r", encoding="utf-8") as file:
+                    file_metadata["contents"] = file.read()
+            except Exception as e:
+                logging.error(f"Error reading .md file: {e}")
+                raise
         else:
             logging.warning(f"Unsupported file type for: {path}")
             return {
@@ -230,12 +258,16 @@ def read_file(path: str):
 
         # Prepare the enriched prompt
         logging.info("Preparing to query the LLM with file content.")
-        enriched_prompt = f"Explain the following code:\n\n{file_metadata['contents']}"
+        enriched_prompt = f"Explain the following content:\n\n{file_metadata['contents']}"
         logging.debug(f"Enriched Prompt:\n{enriched_prompt}")
 
-        # Query the LLM using the query_llm_html_response function
-        logging.info("Querying the LLM to explain the code in HTML format.")
-        llm_response_html = general_question(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+        # Query the LLM for marked plain-text response
+        logging.info("Querying the LLM to explain the content in marked format.")
+        llm_response_marked = general_question(enriched_prompt)
+
+        # Convert marked response to HTML
+        logging.info("Converting LLM response to HTML format.")
+        llm_response_html = convert_marked_to_html(llm_response_marked)
 
         # Safeguard for missing HTML response
         if not llm_response_html:
@@ -261,7 +293,7 @@ def read_file(path: str):
             "html_response": f"<p>Error reading file: {e}</p>",
             "detailed_info": {"name": os.path.basename(path)}
         }
-
+    
 # ========================
 # WRITE FILE FUNCTION
 # ========================
@@ -434,7 +466,7 @@ def list_folder(path: str) -> dict:
 # ========================
 # General Question with HTML conversion
 # ========================
-def general_question(user_prompt):
+def general_question(user_prompt, stream=False):
     """
     Handles general knowledge questions by querying the LLM and converting marked responses to HTML.
 
@@ -447,7 +479,7 @@ def general_question(user_prompt):
     logging.info("Handling general question.")
     
     # Query the LLM for marked response
-    marked_response = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt)
+    marked_response = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=stream)
     logging.debug(f"Marked LLM Response: {marked_response}")
 
     # Convert marked response to HTML
