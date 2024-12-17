@@ -205,7 +205,7 @@ def read_file(path: str):
             "contents": None
         }
 
-        # Log file type detection and content extraction
+        # File type detection and content extraction
         if path.endswith(".docx"):
             logging.info("Detected .docx file. Attempting to read content.")
             try:
@@ -221,7 +221,7 @@ def read_file(path: str):
                 with open(path, "rb") as pdf_file:
                     pdf_reader = PyPDF2.PdfReader(pdf_file)
                     for page in pdf_reader.pages:
-                        pdf_text += page.extract_text()
+                        pdf_text += page.extract_text() or ""
                 file_metadata["contents"] = pdf_text.strip()
             except Exception as e:
                 logging.error(f"Error reading .pdf file: {e}")
@@ -250,7 +250,7 @@ def read_file(path: str):
             }
 
         # Check if content extraction was successful
-        if file_metadata["contents"] is None:
+        if not file_metadata["contents"]:
             logging.error(f"Failed to extract content from file: {path}")
             raise Exception("Failed to extract file content.")
 
@@ -265,19 +265,28 @@ def read_file(path: str):
         logging.info("Querying the LLM to explain the content in marked format.")
         llm_response_marked = general_question(enriched_prompt)
 
+        # Handle nested 'html_response' key if present
+        if isinstance(llm_response_marked, dict) and "html_response" in llm_response_marked:
+            llm_response_marked = llm_response_marked["html_response"]
+
+        # Ensure llm_response_marked is a string
+        if not isinstance(llm_response_marked, str):
+            logging.warning("LLM did not return a valid response. Using fallback.")
+            llm_response_marked = f"No explanation available for the file: {file_metadata['name']}."
+
         # Convert marked response to HTML
         logging.info("Converting LLM response to HTML format.")
         llm_response_html = convert_marked_to_html(llm_response_marked)
 
-        # Safeguard for missing HTML response
-        if not llm_response_html:
-            logging.warning("LLM did not return a valid 'html_response'. Using fallback.")
+        # Safeguard for empty HTML response
+        if not llm_response_html.strip():
+            logging.warning("Converted HTML response is empty. Using fallback.")
             llm_response_html = f"<p>No explanation available for the file: {file_metadata['name']}.</p>"
 
         logging.info(f"LLM successfully explained the file: {file_metadata['name']}")
 
         return {
-            "html_response": llm_response_html,  # Save the HTML response in the new key
+            "html_response": llm_response_html,  # Save the final HTML response
             "detailed_info": file_metadata
         }
 
