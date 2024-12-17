@@ -13,11 +13,24 @@ import docx
 # LLM DECISION FUNCTION
 # ========================
 def llm_decision(user_prompt: str):
+    """
+    Decides which functions to execute based on the LLM response and processes results.
+
+    Args:
+        user_prompt (str): The user's input or request.
+
+    Returns:
+        dict: Combined HTML response and detailed information.
+    """
     logging.info("Starting llm_decision function.")
+
+    # Preprocess the prompt
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
     logging.debug(f"Enriched prompt: {enriched_prompt}")
+
+    # Query the LLM for a decision
     llm_response = query_llm_function_decision(API_URL, MODEL_NAME, enriched_prompt, stream=False)
-    logging.debug(f"LLM Response: {llm_response}")
+    logging.debug(f"Raw LLM Response: {llm_response}")
 
     try:
         # Parse LLM response as JSON
@@ -33,7 +46,6 @@ def llm_decision(user_prompt: str):
             functions = [functions]
         if isinstance(parameters, dict):
             parameters = [parameters]
-
         if len(functions) != len(parameters):
             raise ValueError("Mismatch between number of functions and parameters.")
 
@@ -41,24 +53,20 @@ def llm_decision(user_prompt: str):
         results = []
         for func, param in zip(functions, parameters):
             logging.info(f"Processing function: {func} with parameters: {param}")
-            path = param.get("path") if "path" in param else None
+            path = param.get("path")
 
             if func == "handle_path":
                 action_response = handle_path(path)
+                logging.debug(f"Action response from handle_path: {action_response}")
 
-                # Process nested actions returned by handle_path
-                action_functions = action_response.get("function", [])
-                action_parameters = action_response.get("parameters", [])
-                for action_func, action_param in zip(action_functions, action_parameters):
+                for action_func, action_param in zip(action_response.get("function", []), action_response.get("parameters", [])):
                     if action_func == "read_file":
                         results.append(read_file(**action_param))
                     elif action_func == "list_folder":
                         results.append(list_folder(**action_param))
                     else:
-                        results.append({
-                            "plain_text_response": f"Error: Unknown action '{action_func}'",
-                            "detailed_info": {"path": path},
-                        })
+                        results.append({"plain_text_response": f"Unknown action '{action_func}'"})
+
             elif func == "read_file":
                 results.append(read_file(**param))
             elif func == "write_file":
@@ -66,34 +74,35 @@ def llm_decision(user_prompt: str):
             elif func == "list_folder":
                 results.append(list_folder(**param))
             elif func == "general_question":
-                # Save the plain-text response
                 plain_text_response = general_question(user_prompt)
-                results.append({"plain_text_response": plain_text_response, "detailed_info": {}})
+                results.append({"plain_text_response": plain_text_response})
             else:
-                logging.warning(f"Unknown function '{func}' encountered.")
-                results.append({
-                    "plain_text_response": f"Error: Unknown function '{func}'",
-                    "detailed_info": {},
-                })
+                logging.warning(f"Unknown function '{func}'.")
+                results.append({"plain_text_response": f"Error: Unknown function '{func}'"})
 
-        # Convert plain-text responses to HTML
+        # Combine results: Convert plain-text responses to HTML
         combined_html_response = ""
         combined_detailed_info = []
 
         for res in results:
             if isinstance(res, dict):
-                # Extract and convert plain text to HTML
                 plain_text_response = res.get("plain_text_response", "")
-                if plain_text_response:
+
+                # Normalize responses
+                if isinstance(plain_text_response, dict) and "html_response" in plain_text_response:
+                    plain_text_response = plain_text_response["html_response"]
+
+                if isinstance(plain_text_response, str) and plain_text_response.strip():
                     html_response = convert_marked_to_html(plain_text_response)
                     combined_html_response += html_response
+                else:
+                    logging.warning("Invalid or empty plain_text_response. Skipping conversion.")
+                    combined_html_response += "<p>No valid response to display.</p>"
 
                 # Collect detailed info
                 detailed_info = res.get("detailed_info", {})
                 if detailed_info:
                     combined_detailed_info.append(detailed_info)
-            else:
-                logging.warning(f"Skipping invalid result format: {res}")
 
         # Log final outputs
         logging.debug(f"Combined HTML Response: {combined_html_response}")
@@ -104,6 +113,7 @@ def llm_decision(user_prompt: str):
             "html_response": combined_html_response,
             "detailed_info": combined_detailed_info,
         }
+
     except json.JSONDecodeError:
         logging.error(f"Error decoding LLM response as JSON: {llm_response}")
         return {
@@ -166,16 +176,6 @@ def handle_path(path):
 # READ FILE FUNCTION
 # ========================
 def read_file(path: str):
-    """
-    Reads a file and queries the LLM to explain the content in marked plain-text format.
-
-    Args:
-        path (str): The path to the file.
-
-    Returns:
-        dict: JSON structure with 'plain_text_response' (LLM response in plain text)
-              and 'detailed_info' (file name and content).
-    """
     logging.info(f"Starting read_file function for path: {path}")
 
     try:
@@ -245,6 +245,21 @@ def read_file(path: str):
         # Query the LLM for marked plain-text response
         logging.info("Querying the LLM for marked plain-text explanation.")
         llm_response_marked = general_question(enriched_prompt)
+
+        # Log the raw LLM response
+        logging.debug(f"Raw LLM Response: {repr(llm_response_marked)}")
+
+        # Validate the LLM response
+        if not isinstance(llm_response_marked, str):
+            logging.warning("LLM response is not a valid string. Returning error.")
+            llm_response_marked = "Error: LLM did not return a valid response."
+
+        elif not llm_response_marked.strip():
+            logging.warning("LLM response is an empty string after stripping whitespace.")
+            llm_response_marked = "Error: Empty response received from LLM."
+
+        else:
+            logging.info("Valid LLM response received.")
 
         # Return plain text response and detailed info
         logging.info(f"LLM successfully explained the file: {file_metadata['name']}")
@@ -439,20 +454,16 @@ def list_folder(path: str) -> dict:
 # General Question with HTML conversion
 # ========================
 def general_question(user_prompt, stream=False):
-    """
-    Handles general knowledge questions by querying the LLM and converting marked responses to HTML.
-
-    Args:
-        user_prompt (str): The user's input describing the question.
-
-    Returns:
-        dict: JSON-like structure with 'html_response' and 'detailed_info'.
-    """
     logging.info("Handling general question.")
-    
+
     # Query the LLM for marked response
     marked_response = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=stream)
-    logging.debug(f"Marked LLM Response: {marked_response}")
+    logging.debug(f"Raw LLM Marked Response: {repr(marked_response)}")
+
+    # Validate response
+    if not isinstance(marked_response, str) or not marked_response.strip():
+        logging.error("Invalid LLM response: Not a valid string.")
+        return {"html_response": "Error: LLM returned an invalid or empty response.", "detailed_info": {}}
 
     # Convert marked response to HTML
     html_response = convert_marked_to_html(marked_response)

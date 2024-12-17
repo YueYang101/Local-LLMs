@@ -90,12 +90,21 @@ def process_streamed_responses(response):
 # ========================
 def query_llm_function_decision(api_url, model_name, prompt, stream=False):
     """
-    Queries the API with a prompt and handles streamed responses for incremental updates.
+    Queries the API with a prompt and handles responses for function decision.
+
+    Args:
+        api_url (str): The API URL to query.
+        model_name (str): The name of the model to use.
+        prompt (str): The prompt to send to the LLM.
+        stream (bool): Whether to handle streamed responses.
+
+    Returns:
+        str: Cleaned response from the LLM.
     """
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": prompt, "stream": stream}
 
-    logging.info("Sending request to LLM.")
+    logging.info("Sending request to LLM for function decision.")
     logging.debug(f"Model: {model_name}, API URL: {api_url}")
     logging.debug(f"Prompt: {prompt}")
 
@@ -106,13 +115,20 @@ def query_llm_function_decision(api_url, model_name, prompt, stream=False):
                 logging.info("Processing streamed response from LLM.")
                 return process_streamed_responses(response)
             else:
-                llm_response = response.json().get("response", "No response generated.")
+                response_data = response.json()
+
+                # Extract 'response' key from JSON
+                llm_response = response_data.get("response", "No response generated.")
                 logging.info("Received response from LLM.")
-                logging.debug(f"LLM Response: {llm_response}")
+                logging.debug(f"Function Decision Response: {llm_response}")
+
                 return llm_response
     except requests.exceptions.RequestException as e:
         logging.error(f"Request failed: {e}")
-        return f"Request failed: {e}"
+        return f"Error: Request failed: {e}"
+    except json.JSONDecodeError:
+        logging.error("Failed to decode JSON response.")
+        return "Error: Invalid JSON response received."
 
 # ========================
 # QUERY LLM and return Enhanced HTML Response
@@ -175,32 +191,34 @@ def query_llm_marked_response(api_url, model_name, prompt, stream=False):
     """
     
     full_prompt = f"{pre_prompt}\n\n{prompt}"
-
-    # Prepare the request payload
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": full_prompt, "stream": stream}
 
-    logging.info("Sending request to LLM for marked plain-text response.")
+    logging.info("Sending request to LLM for marked response.")
     logging.debug(f"Model: {model_name}, API URL: {api_url}")
     logging.debug(f"Prompt: {full_prompt}")
 
     try:
         with requests.post(api_url, headers=headers, json=payload, stream=stream) as response:
             response.raise_for_status()
-
             if stream:
                 logging.info("Processing streamed response from LLM.")
-                # Process the streamed response incrementally
                 return process_streamed_responses(response)
             else:
-                # Process the full response
-                llm_response = response.json().get("response", "No response generated.")
-                logging.info("Received response from LLM.")
-                logging.debug(f"Marked Plain-Text Response: {llm_response}")
+                response_data = response.json()
+
+                # Extract the 'response' key (adjust the key if API changes)
+                llm_response = response_data.get("response", "No marked response generated.")
+                logging.info("Received marked response from LLM.")
+                logging.debug(f"Marked LLM Response: {llm_response}")
+
                 return llm_response
     except requests.exceptions.RequestException as e:
         logging.error(f"Request failed: {e}")
         return f"Error: Request failed: {e}"
+    except json.JSONDecodeError:
+        logging.error("Failed to decode JSON response.")
+        return "Error: Invalid JSON response received."
 
 
 def convert_marked_to_html(marked_response):
@@ -210,11 +228,12 @@ def convert_marked_to_html(marked_response):
     import re
 
     html_output = marked_response
-    html_output = re.sub(r"<<title>>(.*?)<<subtitle>>", r"<h1>\1</h1>", html_output)
-    html_output = re.sub(r"<<subtitle>>(.*?)<<code>>", r"<h2>\1</h2>", html_output)
+    html_output = re.sub(r"<<title>>(.*?)<<endtitle>>", r"<h1>\1</h1>", html_output, flags=re.DOTALL)
+    html_output = re.sub(r"<<subtitle>>(.*?)<<endsubtitle>>", r"<h2>\1</h2>", html_output, flags=re.DOTALL)
     html_output = re.sub(r"<<code>>", r"<pre><code>", html_output)
     html_output = re.sub(r"<<endcode>>", r"</code></pre>", html_output)
-    
-    # Ensure proper handling of any extra markers
-    html_output = html_output.replace("<<title>>", "").replace("<<subtitle>>", "")
+
+    # Clean up any leftover markers
+    html_output = re.sub(r"<<.*?>>", "", html_output)
+
     return html_output
