@@ -65,7 +65,7 @@ def llm_decision(user_prompt: str):
                     elif action_func == "list_folder":
                         results.append(list_folder(**action_param))
                     else:
-                        results.append({"plain_text_response": f"Unknown action '{action_func}'"})
+                        results.append({"html_response": f"<p>Unknown action '{action_func}'</p>"})
 
             elif func == "read_file":
                 results.append(read_file(**param))
@@ -74,29 +74,25 @@ def llm_decision(user_prompt: str):
             elif func == "list_folder":
                 results.append(list_folder(**param))
             elif func == "general_question":
-                plain_text_response = general_question(user_prompt)
-                results.append({"plain_text_response": plain_text_response})
+                # Use the HTML response directly
+                general_response = general_question(user_prompt)
+                results.append(general_response)  # Already includes 'html_response'
             else:
                 logging.warning(f"Unknown function '{func}'.")
-                results.append({"plain_text_response": f"Error: Unknown function '{func}'"})
+                results.append({"html_response": f"<p>Error: Unknown function '{func}'</p>"})
 
-        # Combine results: Convert plain-text responses to HTML
+        # Combine results: Use pre-converted HTML responses directly
         combined_html_response = ""
         combined_detailed_info = []
 
         for res in results:
             if isinstance(res, dict):
-                plain_text_response = res.get("plain_text_response", "")
-
-                # Normalize responses
-                if isinstance(plain_text_response, dict) and "html_response" in plain_text_response:
-                    plain_text_response = plain_text_response["html_response"]
-
-                if isinstance(plain_text_response, str) and plain_text_response.strip():
-                    html_response = convert_marked_to_html(plain_text_response)
+                # Directly check for 'html_response'
+                html_response = res.get("html_response")
+                if html_response:
                     combined_html_response += html_response
                 else:
-                    logging.warning("Invalid or empty plain_text_response. Skipping conversion.")
+                    logging.warning("No HTML response found. Using fallback.")
                     combined_html_response += "<p>No valid response to display.</p>"
 
                 # Collect detailed info
@@ -175,6 +171,11 @@ def handle_path(path):
 # ========================
 # READ FILE FUNCTION
 # ========================
+import os
+import logging
+from docx import Document
+import PyPDF2
+
 def read_file(path: str):
     logging.info(f"Starting read_file function for path: {path}")
 
@@ -244,40 +245,38 @@ def read_file(path: str):
 
         # Query the LLM for marked plain-text response
         logging.info("Querying the LLM for marked plain-text explanation.")
-        llm_response_marked = general_question(enriched_prompt)
+        llm_response = general_question(enriched_prompt)  # Returns a dict with "html_response"
 
         # Log the raw LLM response
-        logging.debug(f"Raw LLM Response: {repr(llm_response_marked)}")
+        logging.debug(f"Raw LLM Response: {repr(llm_response)}")
 
-        # Validate the LLM response
-        if not isinstance(llm_response_marked, str):
-            logging.warning("LLM response is not a valid string. Returning error.")
-            llm_response_marked = "Error: LLM did not return a valid response."
-
-        elif not llm_response_marked.strip():
-            logging.warning("LLM response is an empty string after stripping whitespace.")
-            llm_response_marked = "Error: Empty response received from LLM."
-
+        # Validate and handle the LLM response
+        if isinstance(llm_response, dict):
+            html_response = llm_response.get("html_response", "")
+            if not html_response.strip():
+                logging.warning("No valid html_response found in LLM result.")
+                html_response = "<p>Error: No valid explanation provided.</p>"
         else:
-            logging.info("Valid LLM response received.")
+            logging.warning("LLM response did not return a valid dictionary format.")
+            html_response = "<p>Error: LLM response format invalid.</p>"
 
-        # Return plain text response and detailed info
+        # Return html_response and detailed info
         logging.info(f"LLM successfully explained the file: {file_metadata['name']}")
         return {
-            "plain_text_response": llm_response_marked,
+            "html_response": html_response,
             "detailed_info": file_metadata
         }
 
     except FileNotFoundError:
         logging.error(f"File not found: {path}")
         return {
-            "plain_text_response": f"Error: File not found at {path}",
+            "html_response": f"<p>Error: File not found at {path}</p>",
             "detailed_info": {"name": os.path.basename(path)}
         }
     except Exception as e:
         logging.error(f"Error occurred while processing file {path}: {e}")
         return {
-            "plain_text_response": f"Error reading file: {e}",
+            "html_response": f"<p>Error reading file: {e}</p>",
             "detailed_info": {"name": os.path.basename(path)}
         }
     
@@ -318,18 +317,23 @@ def write_file(path: str, content: str):
 # ========================
 # LIST FOLDER FUNCTION
 # ========================
+import os
+import logging
+import docx
+from PyPDF2 import PdfReader
+
 def list_folder(path: str) -> dict:
     """
-    Lists the structure of the last folder in the given path.
-    Outputs a plain text tree and a JSON structure containing file names and contents.
+    Lists the structure of the folder, extracts file contents, 
+    and queries the LLM to explain the project structure and files.
 
     Args:
         path (str): The path to the folder.
 
     Returns:
-        dict: A JSON structure containing 'plain_text' and 'detailed_info'.
+        dict: A JSON structure containing 'html_response' and 'detailed_info'.
     """
-    logging.info(f"Generating folder structure for: {path}")
+    logging.info(f"Generating folder structure and content for: {path}")
 
     # Helper function to read file content
     def read_file_content(file_path: str) -> str:
@@ -340,7 +344,7 @@ def list_folder(path: str) -> dict:
             if ext == '.pdf':
                 with open(file_path, 'rb') as f:
                     reader = PdfReader(f)
-                    return "\n".join(page.extract_text() for page in reader.pages)
+                    return "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
 
             elif ext == '.docx':
                 doc = docx.Document(file_path)
@@ -355,115 +359,87 @@ def list_folder(path: str) -> dict:
             logging.error(f"Error reading file {file_path}: {e}")
             return f"Error reading file: {e}"
 
-    # Helper function to recursively build the folder structure
-    def build_tree(path, level=0):
-        logging.debug(f"Building tree for path: {path}, level: {level}")
-        plain_text_structure = ""
-        json_structure = {"name": os.path.basename(path), "content": None}
+    # Helper function to build tree structure and aggregate file content
+    def build_tree_and_content(path, level=0):
         indent = "    " * level
         prefix = f"{indent}├── "
+        plain_text_structure = ""
+        aggregated_content = ""
 
-        # Check if the path is a directory
         if os.path.isdir(path):
             dir_name = os.path.basename(path)
-
-            # Skip hidden directories and __pycache__
-            if dir_name.startswith('.') or dir_name == "__pycache__":
-                logging.debug(f"Skipping hidden or __pycache__ directory: {dir_name}")
-                return "", None
-
             plain_text_structure += f"{prefix}{dir_name}/\n"
-            logging.debug(f"Added directory: {dir_name}")
 
-            # Recursively process items in the directory
             for item in sorted(os.listdir(path)):
                 item_path = os.path.join(path, item)
-
-                # Skip hidden files/directories and __pycache__
                 if item.startswith('.') or item == "__pycache__":
-                    logging.debug(f"Skipping hidden file/directory or __pycache__: {item}")
                     continue
 
-                sub_plain, sub_json = build_tree(item_path, level + 1)
-                plain_text_structure += sub_plain
+                sub_tree, sub_content = build_tree_and_content(item_path, level + 1)
+                plain_text_structure += sub_tree
+                aggregated_content += sub_content
         else:
-            # Process files
             file_name = os.path.basename(path)
-
-            # Skip hidden files
-            if file_name.startswith('.'):
-                logging.debug(f"Skipping hidden file: {file_name}")
-                return "", None
-
             plain_text_structure += f"{prefix}{file_name}\n"
-            logging.debug(f"Added file: {file_name}")
+            aggregated_content += f"\n### {file_name}\n{read_file_content(path)}\n"
 
-            # Add file content to JSON structure
-            json_structure["name"] = file_name
-            json_structure["content"] = read_file_content(path)
-
-        return plain_text_structure, json_structure
+        return plain_text_structure, aggregated_content
 
     # Validate the folder path
     if not os.path.exists(path):
-        logging.error(f"Path does not exist: {path}")
-        return {
-            "plain_text": "",
-            "detailed_info": {"error": f"Path does not exist: {path}"}
-        }
-
+        return {"html_response": "<p>Error: Path does not exist.</p>", "detailed_info": {"error": "Path does not exist"}}
     if not os.path.isdir(path):
-        logging.error(f"Path is not a folder: {path}")
-        return {
-            "plain_text": "",
-            "detailed_info": {"error": f"Path is not a folder: {path}"}
-        }
+        return {"html_response": "<p>Error: Path is not a folder.</p>", "detailed_info": {"error": "Path is not a folder"}}
 
-    # Try to generate the folder structure
     try:
-        last_folder_name = os.path.basename(os.path.abspath(path))
-        logging.debug(f"Processing root folder: {last_folder_name}")
-        plain_text_tree = f"The tree structure of the folder is:\n{last_folder_name}/\n"
-        json_tree = []
+        # Generate tree structure and aggregate file content
+        folder_structure, aggregated_content = build_tree_and_content(path)
 
-        for item in sorted(os.listdir(path)):
-            item_path = os.path.join(path, item)
+        # Combine tree and content for LLM prompt
+        enriched_prompt = (
+            f"Here is the folder structure of a programming project:\n\n{folder_structure}\n\n"
+            f"Below are the contents of the files:\n{aggregated_content}\n\n"
+            "Explain the overall purpose of the project, key components, and functionality."
+        )
 
-            # Skip hidden files/directories and __pycache__
-            if item.startswith('.') or item == "__pycache__":
-                logging.debug(f"Skipping hidden file/directory or __pycache__: {item}")
-                continue
+        logging.info("Querying the LLM with folder structure and content.")
+        llm_response = general_question(enriched_prompt)
 
-            sub_plain, sub_json = build_tree(item_path, level=1)
-            plain_text_tree += sub_plain
-            if sub_json:  # Add child to JSON root
-                json_tree.append(sub_json)
+        # Process LLM response
+        html_response = llm_response.get("html_response", "") if isinstance(llm_response, dict) else llm_response
+        if not html_response.strip():
+            html_response = "<p>No explanation provided by the LLM.</p>"
 
-        logging.info(f"Successfully generated folder structure for: {path}")
-
-        # Return combined output
-        return {"plain_text": plain_text_tree, "detailed_info": json_tree}
-    except Exception as e:
-        logging.error(f"Error reading folder: {e}")
         return {
-            "plain_text": "",
-            "detailed_info": {"error": f"Error reading folder: {e}"}
+            "html_response": html_response,
+            "detailed_info": {"folder_structure": folder_structure}
         }
+
+    except Exception as e:
+        logging.error(f"Error processing folder: {e}")
+        return {"html_response": f"<p>Error: {e}</p>", "detailed_info": {"error": str(e)}}
     
 # ========================
 # General Question with HTML conversion
 # ========================
 def general_question(user_prompt, stream=False):
+    """
+    Handles general knowledge questions by querying the LLM and converting marked responses to HTML.
+    """
     logging.info("Handling general question.")
 
-    # Query the LLM for marked response
+    # Query the LLM
     marked_response = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=stream)
-    logging.debug(f"Raw LLM Marked Response: {repr(marked_response)}")
+    logging.debug(f"Raw Marked Response: {repr(marked_response)}")
 
-    # Validate response
+    # Extract and validate response
+    if isinstance(marked_response, dict):
+        marked_response = marked_response.get("html_response", "Error: Missing 'html_response' key in response.")
+        logging.debug(f"Extracted 'html_response': {repr(marked_response)}")
+
     if not isinstance(marked_response, str) or not marked_response.strip():
-        logging.error("Invalid LLM response: Not a valid string.")
-        return {"html_response": "Error: LLM returned an invalid or empty response.", "detailed_info": {}}
+        logging.error("Invalid or empty LLM response received.")
+        return {"html_response": "Error: Invalid or empty LLM response.", "detailed_info": {}}
 
     # Convert marked response to HTML
     html_response = convert_marked_to_html(marked_response)
