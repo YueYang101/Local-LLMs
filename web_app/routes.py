@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request, Form
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from Functions.functions import llm_decision
 import logging
+from Functions.functions import llm_decision
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -14,28 +14,32 @@ logging.basicConfig(
 router = APIRouter()
 router.mount("/static", StaticFiles(directory="web_app/static"), name="static")
 
-@router.get("/")
+@router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    try:
-        from fastapi.templating import Jinja2Templates
-        templates = Jinja2Templates(directory="web_app/templates")
-        return templates.TemplateResponse("index.html", {"request": request})
-    except Exception as e:
-        logging.error(f"Error rendering the homepage: {e}")
-        raise HTTPException(status_code=500, detail="Error rendering the homepage.")
+    from fastapi.templating import Jinja2Templates
+    templates = Jinja2Templates(directory="web_app/templates")
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
-@router.post("/handle-prompt/")
+@router.post("/handle-prompt/", response_class=JSONResponse)
 async def handle_prompt(user_prompt: str = Form(...)):
     logging.info(f"Received user prompt: {user_prompt}")
 
-    # Currently llm_decision returns a dict with "html_response".
-    # We'll just stream this final response as a single chunk.
-    # For real-time token streaming, refactor llm_decision to yield chunks.
-    
-    def response_generator():
-        decision = llm_decision(user_prompt)
-        html_response = decision.get("html_response", "<p>No content</p>")
-        yield html_response
+    decision = llm_decision(user_prompt)
+    # If there's a streaming generator, return a StreamingResponse
+    if "stream_generator" in decision:
+        def stream_response():
+            try:
+                for chunk in decision["stream_generator"]:
+                    yield chunk
+            except Exception as e:
+                logging.error(f"Error during streaming: {e}")
+                yield f"<p>Error: {str(e)}</p>"
 
-    return StreamingResponse(response_generator(), media_type="text/html")
+        return StreamingResponse(stream_response(), media_type="text/html")
+    else:
+        # Normal response
+        return JSONResponse(content={
+            "html_response": decision.get("html_response", ""),
+            "detailed_info": decision.get("detailed_info", {})
+        })

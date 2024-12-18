@@ -1,19 +1,18 @@
-# uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 import os
-from docx import Document
-import PyPDF2
 import json
 import logging
+from docx import Document
+import PyPDF2
 from LLM_interface.query_llm import (
     preprocess_prompt_with_functions,
     query_llm_function_decision,
     API_URL,
     MODEL_NAME,
-    query_llm_marked_response,
-    convert_marked_to_html
+    query_llm_marked_response
 )
 from PyPDF2 import PdfReader
 import docx
+from Functions.local_formatter import LocalFormatter
 
 def llm_decision(user_prompt: str):
     logging.info("Starting llm_decision function.")
@@ -21,18 +20,12 @@ def llm_decision(user_prompt: str):
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
     logging.debug(f"Enriched prompt: {enriched_prompt}")
 
-    # IMPORTANT CHANGE: Now llm_response is a generator if stream=True
-    llm_response_chunks = query_llm_function_decision(API_URL, MODEL_NAME, enriched_prompt, stream=True)
-
-    # We need to accumulate the streamed response to parse JSON.
-    # The LLM must return JSON for the function decision in the first message.
-    decision_text = ""
-    for chunk in llm_response_chunks:
-        decision_text += chunk
-    logging.debug(f"Raw LLM Decision Response: {decision_text}")
+    # For decision, we do not stream. We need full JSON response.
+    llm_response = query_llm_function_decision(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+    logging.debug(f"Raw LLM Decision Response: {llm_response}")
 
     try:
-        response_data = json.loads(decision_text)
+        response_data = json.loads(llm_response)
         logging.info("Successfully parsed LLM response as JSON.")
 
         functions = response_data.get("function", [])
@@ -48,7 +41,7 @@ def llm_decision(user_prompt: str):
         results = []
         for func, param in zip(functions, parameters):
             logging.info(f"Processing function: {func} with parameters: {param}")
-            path = param.get("path")
+            path = param.get("path", "")
 
             if func == "handle_path":
                 action_response = handle_path(path)
@@ -66,42 +59,49 @@ def llm_decision(user_prompt: str):
             elif func == "list_folder":
                 results.append(list_folder(**param))
             elif func == "general_question":
-                # CHANGED: now get streamed response directly from general_question
-                general_response = general_question(user_prompt, stream=True)
-                # general_response is a generator yielding chunks of HTML
-
-                # We'll accumulate these chunks:
-                streamed_html = ""
-                for html_chunk in general_response:
-                    streamed_html += html_chunk
-                results.append({"html_response": streamed_html})
+                # We'll return a generator (stream) for this response.
+                # Instead of returning a dict immediately, let's store a generator.
+                # We'll handle the generator in routes.py where we build the StreamingResponse.
+                gen = general_question(user_prompt, stream=True)
+                results.append({"stream_generator": gen})
             else:
                 logging.warning(f"Unknown function '{func}'.")
                 results.append({"html_response": f"<p>Error: Unknown function '{func}'</p>"})
 
+        # Combine results
+        # If there's a streaming result, we return that directly.
+        # If multiple functions are called, let's just combine their HTML.
+        # For simplicity, assume only one streaming function per request.
         combined_html_response = ""
+        stream_generator = None
         combined_detailed_info = []
         for res in results:
-            if isinstance(res, dict):
+            if "stream_generator" in res:
+                stream_generator = res["stream_generator"]
+            else:
                 html_response = res.get("html_response")
                 if html_response:
                     combined_html_response += html_response
-                else:
-                    combined_html_response += "<p>No valid response to display.</p>"
-
                 detailed_info = res.get("detailed_info", {})
                 if detailed_info:
                     combined_detailed_info.append(detailed_info)
 
-        return {
-            "html_response": combined_html_response,
-            "detailed_info": combined_detailed_info,
-        }
+        # If we got a stream generator, return that directly. Otherwise return normal HTML.
+        if stream_generator:
+            return {
+                "stream_generator": stream_generator,
+                "detailed_info": combined_detailed_info
+            }
+        else:
+            return {
+                "html_response": combined_html_response,
+                "detailed_info": combined_detailed_info,
+            }
 
     except json.JSONDecodeError:
-        logging.error(f"Error decoding LLM response as JSON: {decision_text}")
+        logging.error(f"Error decoding LLM response as JSON: {llm_response}")
         return {
-            "html_response": f"<p>Error: Invalid JSON response from LLM. Raw output: {decision_text}</p>",
+            "html_response": f"<p>Error: Invalid JSON response from LLM. Raw output: {llm_response}</p>",
             "detailed_info": {},
         }
     except Exception as e:
@@ -114,64 +114,42 @@ def llm_decision(user_prompt: str):
 def handle_path(path):
     logging.info(f"Starting handle_path function with path: {path}")
     if os.path.isfile(path):
-        logging.info(f"Detected file: {path}")
         return {
             "function": ["read_file"],
-            "parameters": [
-                {
-                    "path": path
-                }
-            ]
+            "parameters": [{"path": path}]
         }
     elif os.path.isdir(path):
-        logging.info(f"Detected directory: {path}")
         return {
             "function": ["list_folder"],
-            "parameters": [
-                {
-                    "path": path
-                }
-            ]
+            "parameters": [{"path": path}]
         }
     else:
-        logging.error(f"Invalid path: {path}")
         return {
             "function": ["error"],
             "parameters": [
-                {
-                    "error_message": f"{path} is neither a valid file nor a folder."
-                }
+                {"error_message": f"{path} is neither a valid file nor a folder."}
             ]
         }
-
-import logging
-from docx import Document
-import PyPDF2
 
 def read_file(path: str):
     logging.info(f"Starting read_file function for path: {path}")
 
     try:
-        file_metadata = {
-            "name": os.path.basename(path),
-            "contents": None
-        }
-
+        file_metadata = {"name": os.path.basename(path), "contents": None}
         if path.endswith(".docx"):
             doc = Document(path)
             file_metadata["contents"] = "\n".join([para.text for para in doc.paragraphs])
         elif path.endswith(".pdf"):
             pdf_text = ""
             with open(path, "rb") as pdf_file:
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                pdf_reader = PdfReader(pdf_file)
                 for page in pdf_reader.pages:
                     pdf_text += page.extract_text() or ""
             file_metadata["contents"] = pdf_text.strip()
-        elif path.endswith(".py") or path.endswith(".md"):
-            with open(path, "r", encoding="utf-8") as file:
-                file_metadata["contents"] = file.read()
+        elif path.endswith(".py") or path.endswith(".md") or path.endswith(".txt"):
+            with open(path, "r", encoding="utf-8") as f:
+                file_metadata["contents"] = f.read()
         else:
-            logging.warning(f"Unsupported file type for: {path}")
             return {
                 "plain_text_response": f"Unsupported file type: {file_metadata['name']}",
                 "detailed_info": file_metadata
@@ -181,17 +159,9 @@ def read_file(path: str):
             raise Exception("Failed to extract file content.")
 
         enriched_prompt = f"Explain the following content:\n\n{file_metadata['contents']}"
-
-        # CHANGED: general_question called with stream=True
-        llm_response_chunks = general_question(enriched_prompt, stream=True)
-        streamed_html = ""
-        for chunk in llm_response_chunks:
-            streamed_html += chunk
-
-        return {
-            "html_response": streamed_html,
-            "detailed_info": file_metadata
-        }
+        # Stream from LLM and format locally
+        gen = general_question(enriched_prompt, stream=True)
+        return {"stream_generator": gen, "detailed_info": file_metadata}
 
     except FileNotFoundError:
         return {
@@ -212,7 +182,7 @@ def write_file(path: str, content: str):
             for line in content.split("\n"):
                 doc.add_paragraph(line)
             doc.save(path)
-        elif path.endswith(".py"):
+        elif path.endswith(".py") or path.endswith(".md") or path.endswith(".txt"):
             with open(path, "w", encoding="utf-8") as file:
                 file.write(content)
         elif path.endswith(".pdf"):
@@ -230,10 +200,9 @@ def write_file(path: str, content: str):
         return {"plain_text": f"Error writing file: {e}", "detailed_info": {"path": path}}
 
 def list_folder(path: str) -> dict:
-    import os, logging, docx
-    from PyPDF2 import PdfReader
-
     logging.info(f"Generating folder structure and content for: {path}")
+    import os
+    from PyPDF2 import PdfReader
 
     def read_file_content(file_path: str) -> str:
         try:
@@ -243,12 +212,12 @@ def list_folder(path: str) -> dict:
                 with open(file_path, 'rb') as f:
                     reader = PdfReader(f)
                     return "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
-            elif ext == '.docx':
-                doc = docx.Document(file_path)
-                return "\n".join(paragraph.text for paragraph in doc.paragraphs)
             elif ext in {'.txt', '.py', '.js', '.html', '.md'}:
                 with open(file_path, "r", encoding="utf-8") as f:
                     return f.read()
+            elif ext == '.docx':
+                d = Document(file_path)
+                return "\n".join(paragraph.text for paragraph in d.paragraphs)
             return "Unsupported file type for preview."
         except Exception as e:
             return f"Error reading file: {e}"
@@ -257,29 +226,25 @@ def list_folder(path: str) -> dict:
         indent = "    " * level
         tree_prefix = f"{indent}├── "
         plain_text_structure = ""
-        html_text_structure = ""
         aggregated_content = ""
 
         if os.path.isdir(path):
             dir_name = os.path.basename(path)
             plain_text_structure += f"{tree_prefix}{dir_name}/\n"
-            html_text_structure += f"{tree_prefix}{dir_name}/\n"
-
-            for idx, item in enumerate(sorted(os.listdir(path))):
+            for item in sorted(os.listdir(path)):
                 if item.startswith('.') or item == "__pycache__":
                     continue
                 item_path = os.path.join(path, item)
-                sub_plain, sub_html, sub_content = build_tree_and_content(item_path, level + 1)
+                sub_plain, sub_content = build_tree_and_content(item_path, level + 1)
                 plain_text_structure += sub_plain
-                html_text_structure += sub_html
                 aggregated_content += sub_content
         else:
             file_name = os.path.basename(path)
             plain_text_structure += f"{tree_prefix}{file_name}\n"
-            html_text_structure += f"{tree_prefix}{file_name}\n"
-            aggregated_content += f"\n### {file_name}\n{read_file_content(path)}\n"
+            file_content = read_file_content(path)
+            aggregated_content += f"\n# {file_name}\n{file_content}\n"
 
-        return plain_text_structure, html_text_structure, aggregated_content
+        return plain_text_structure, aggregated_content
 
     if not os.path.exists(path):
         return {"html_response": "<p>Error: Path does not exist.</p>", "detailed_info": {"error": "Path does not exist"}}
@@ -287,63 +252,49 @@ def list_folder(path: str) -> dict:
         return {"html_response": "<p>Error: Path is not a folder.</p>", "detailed_info": {"error": "Path is not a folder"}}
 
     try:
-        folder_structure, html_tree_structure, aggregated_content = build_tree_and_content(path)
+        folder_structure, aggregated_content = build_tree_and_content(path)
         enriched_prompt = (
             f"Here is the folder structure of a programming project:\n\n{folder_structure}\n\n"
             f"Below are the contents of the files:\n{aggregated_content}\n\n"
             "Explain the overall purpose of the project, key components, and functionality."
         )
 
-        # general_question with stream=True
-        llm_response_chunks = general_question(enriched_prompt, stream=True)
-
-        streamed_html = ""
-        for chunk in llm_response_chunks:
-            streamed_html += chunk
-
-        combined_html_response = (
-            "<h2>Folder Structure</h2>\n<pre>\n" + html_tree_structure + "</pre>\n" +
-            "<h2>Explanation</h2>\n" + streamed_html
-        )
-
-        return {
-            "html_response": combined_html_response,
-            "detailed_info": {"folder_structure": folder_structure}
-        }
+        gen = general_question(enriched_prompt, stream=True)
+        return {"stream_generator": gen, "detailed_info": {"folder_structure": folder_structure}}
 
     except Exception as e:
         logging.error(f"Error processing folder: {e}")
         return {"html_response": f"<p>Error: {e}</p>", "detailed_info": {"error": str(e)}}
 
 def general_question(user_prompt, stream=False):
-    from LLM_interface.query_llm import query_llm_marked_response, convert_marked_to_html
-
-    # query_llm_marked_response now returns a generator if stream=True
+    """
+    Handles general questions.
+    Streams chunks from the LLM, passes them to local formatter, and yields HTML incrementally.
+    """
+    logging.info("Starting general_question function.")
     response_chunks = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=stream)
 
-    # If streaming, yield converted chunks as they arrive:
     if stream:
-        # Each chunk might be partial text. We convert incrementally:
-        # For simplicity, we'll accumulate and convert at the end of each chunk,
-        # but better approach might be to handle partial markers carefully.
-        # Here, just yield raw text and convert after all chunks:
-        # Actually, let's just yield raw text first and convert after accumulation in calling functions.
-        accumulated = ""
+        formatter = LocalFormatter()
+        # As chunks come in, feed them to the formatter and yield the HTML
         for chunk in response_chunks:
-            accumulated += chunk
-            # We won't convert until the caller finishes accumulating.
-            # Just yield the chunk raw for now.
-            # The caller does the conversion after fully accumulated.
-        # After done, convert once:
-        html_response = convert_marked_to_html(accumulated)
-        yield html_response
+            html = formatter.feed_text(chunk)
+            if html:
+                # Yield incremental formatted HTML
+                yield html
+        # After all chunks done, close formatter
+        final_html = formatter.close()
+        if final_html:
+            yield final_html
     else:
-        # Not streaming
-        llm_response = ""
+        # Non-streaming mode: accumulate all chunks and then format once at the end
+        all_text = ""
         for chunk in response_chunks:
-            llm_response += chunk
-        html_response = convert_marked_to_html(llm_response)
+            all_text += chunk
+        formatter = LocalFormatter()
+        html = formatter.feed_text(all_text)
+        html += formatter.close()
         return {
-            "html_response": html_response,
+            "html_response": html,
             "detailed_info": {"type": "general_question", "prompt": user_prompt},
         }
