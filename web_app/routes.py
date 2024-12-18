@@ -23,22 +23,24 @@ async def home(request: Request):
 
 @router.post("/handle-prompt/", response_class=JSONResponse)
 async def handle_prompt(user_prompt: str = Form(...)):
-    logging.info(f"Received user prompt: {user_prompt}")
-
+    logging.info(f"handle_prompt: Received user prompt: {user_prompt}")
     decision = llm_decision(user_prompt)
-    # If there's a streaming generator, return a StreamingResponse
+
     if "stream_generator" in decision:
+        logging.info("handle_prompt: Streaming response detected.")
         def stream_response():
             try:
                 for chunk in decision["stream_generator"]:
+                    logging.debug(f"handle_prompt: Streaming chunk of length {len(chunk)}")
                     yield chunk
+                logging.info("handle_prompt: Finished streaming all chunks.")
             except Exception as e:
-                logging.error(f"Error during streaming: {e}")
+                logging.error(f"handle_prompt: Error during streaming: {e}")
                 yield f"<p>Error: {str(e)}</p>"
 
         return StreamingResponse(stream_response(), media_type="text/html")
     else:
-        # Normal response
+        logging.info("handle_prompt: Returning normal JSON response.")
         return JSONResponse(content={
             "html_response": decision.get("html_response", ""),
             "detailed_info": decision.get("detailed_info", {})

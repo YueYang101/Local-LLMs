@@ -54,26 +54,31 @@ def preprocess_prompt_with_functions(user_prompt):
 def process_streamed_responses(response):
     """
     Yields raw text chunks from the response stream.
-    If your LLM returns JSON lines with a 'response' key, parse it here.
-    Otherwise, yield lines as is.
+    Logs each chunk to help debug streaming issues.
     """
+    chunk_count = 0
     for chunk in response.iter_lines(decode_unicode=True):
-        if chunk:
-            # If the LLM returns raw text
+        if chunk is not None:
+            chunk_count += 1
+            logging.debug(f"process_streamed_responses: Received chunk #{chunk_count}: {chunk[:100]}...")
             yield chunk + "\n"
+    logging.info(f"process_streamed_responses: Total {chunk_count} chunks received.")
 
 def query_llm_function_decision(api_url, model_name, prompt, stream=True):
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": prompt, "stream": stream}
 
-    logging.info("Sending request to LLM for function decision.")
+    logging.info("query_llm_function_decision: Sending request to LLM for function decision.")
+    logging.debug(f"query_llm_function_decision: Payload: {payload}")
+
     with requests.post(api_url, headers=headers, json=payload, stream=stream) as response:
+        logging.info(f"query_llm_function_decision: Received status {response.status_code} from LLM.")
         response.raise_for_status()
         if stream:
-            # Accumulate all chunks (for function decision we need the full JSON)
             decision_text = ""
             for chunk in process_streamed_responses(response):
                 decision_text += chunk
+            logging.debug(f"query_llm_function_decision: Full decision response: {decision_text}")
             return decision_text
         else:
             data = response.json()
@@ -82,14 +87,23 @@ def query_llm_function_decision(api_url, model_name, prompt, stream=True):
 def query_llm_marked_response(api_url, model_name, prompt, stream=True):
     """
     Query the LLM and return a generator of text chunks.
-    We no longer do special formatting instructions in the prompt.
-    Just return plain text and rely on local formatting.
+    Logging added to debug streaming issues.
     """
+    logging.info("query_llm_marked_response: Preparing to send request for streamed response.")
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": prompt, "stream": stream}
+    logging.debug(f"query_llm_marked_response: Payload: {payload}")
 
-    logging.info("Sending request to LLM for a general answer (streamed).")
     with requests.post(api_url, headers=headers, json=payload, stream=stream) as response:
+        logging.info(f"query_llm_marked_response: LLM responded with status {response.status_code}")
         response.raise_for_status()
-        # Return generator over chunks
-        return process_streamed_responses(response)
+        chunk_count = 0
+        for chunk in response.iter_lines(decode_unicode=True):
+            if chunk:
+                chunk_count += 1
+                logging.debug(f"query_llm_marked_response: Chunk #{chunk_count}: {chunk[:100]}...")
+                yield chunk
+            else:
+                # It's possible to get empty chunks, log them
+                logging.debug("query_llm_marked_response: Received empty chunk.")
+        logging.info(f"query_llm_marked_response: Streaming ended after {chunk_count} chunks.")
