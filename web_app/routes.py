@@ -28,11 +28,14 @@ async def handle_prompt(user_prompt: str = Form(...)):
 
     if "stream_generator" in decision:
         logging.info("handle_prompt: Streaming response detected.")
-        def stream_response():
+
+        async def stream_response():
             try:
                 for chunk in decision["stream_generator"]:
-                    logging.debug(f"handle_prompt: Streaming chunk of length {len(chunk)}")
-                    yield chunk
+                    # Split the chunk into words
+                    words = chunk.split()
+                    for word in words:
+                        yield f"{word} "  # Send each word followed by a space
                 logging.info("handle_prompt: Finished streaming all chunks.")
             except Exception as e:
                 logging.error(f"handle_prompt: Error during streaming: {e}")

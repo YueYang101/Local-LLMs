@@ -268,7 +268,14 @@ def list_folder(path: str) -> dict:
         logging.error(f"list_folder: Error processing folder: {e}")
         return {"html_response": f"<p>Error: {e}</p>", "detailed_info": {"error": str(e)}}
 
+from Functions.local_formatter import LocalFormatter
+import logging
+
 def general_question(user_prompt, stream=False):
+    """
+    Handles general questions.
+    Processes chunks from LLM incrementally, formats them, and yields HTML.
+    """
     logging.info(f"general_question: Handling prompt: {user_prompt}, stream={stream}")
     response_chunks = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=stream)
 
@@ -279,11 +286,11 @@ def general_question(user_prompt, stream=False):
             for chunk in response_chunks:
                 chunk_index += 1
                 logging.debug(f"general_question: Received chunk #{chunk_index}: {chunk[:100]}...")
-                html = formatter.feed_text(chunk)
+                html = formatter.feed_text(chunk)  # Process the extracted response content
                 if html:
-                    logging.debug("general_question: Yielding formatted HTML chunk.")
+                    logging.debug(f"general_question: Yielding formatted HTML chunk of length {len(html)}.")
                     yield html
-            # After all chunks done, close formatter
+            # Finalize formatting
             final_html = formatter.close()
             if final_html:
                 logging.debug("general_question: Yielding final formatted HTML after close.")
@@ -294,10 +301,11 @@ def general_question(user_prompt, stream=False):
     else:
         all_text = ""
         for chunk in response_chunks:
-            all_text += chunk
+            all_text += chunk  # Accumulate all response content
         formatter = LocalFormatter()
         html = formatter.feed_text(all_text)
         html += formatter.close()
+        logging.debug("general_question: Returning final HTML response.")
         return {
             "html_response": html,
             "detailed_info": {"type": "general_question", "prompt": user_prompt},

@@ -8,7 +8,7 @@ function resetInputHeight() {
 function copyToClipboard(content) {
     navigator.clipboard.writeText(content)
         .then(() => {
-            console.debug("Copied to clipboard!");
+            if (DEBUG_MODE) console.debug("Copied to clipboard!");
         })
         .catch((err) => {
             console.error("Failed to copy to clipboard:", err);
@@ -60,13 +60,11 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
 
     chatWindow.appendChild(userMessage);
 
-    // Add a progress bar
-    const progressBarContainer = document.createElement("div");
-    progressBarContainer.classList.add("progress-bar-container");
-    const progressBar = document.createElement("div");
-    progressBar.classList.add("progress-bar");
-    progressBarContainer.appendChild(progressBar);
-    chatWindow.appendChild(progressBarContainer);
+    // Create a container for the bot's response
+    const botMessage = document.createElement("div");
+    botMessage.classList.add("message", "bot");
+    chatWindow.appendChild(botMessage);
+
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
     try {
@@ -82,36 +80,28 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             throw new Error(`Server returned status ${response.status}`);
         }
 
-        // CHANGED: Stream the response
+        // Stream the response word by word
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
-        let chunkValue = "";
-
-        // Create a container for the streamed response
-        const htmlContainer = document.createElement("div");
-        htmlContainer.classList.add("response-container");
-        chatWindow.appendChild(htmlContainer);
 
         while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                break;
-            }
-            chunkValue += decoder.decode(value, { stream: true });
-            // Since our server sends full HTML at once in this demo, we can just set the innerHTML at the end.
-            // If you had partial HTML chunks, you might want to accumulate and then set innerHTML carefully.
-            htmlContainer.innerHTML = chunkValue;
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
+            const { value, done } = await reader.read();
+            if (done) break;
 
+            if (value) {
+                const chunk = decoder.decode(value, { stream: true });
+                botMessage.innerHTML += chunk; // Append each word chunk to the message
+                chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll to the bottom
+            }
+        }
     } catch (error) {
         console.error("Error during fetch:", error);
+
         const errorMessage = document.createElement("div");
         errorMessage.classList.add("message", "bot");
         errorMessage.innerText = "Error: Unable to process your request.";
         chatWindow.appendChild(errorMessage);
     } finally {
-        progressBarContainer.remove();
         resetInputHeight();
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }

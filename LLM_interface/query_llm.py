@@ -87,23 +87,38 @@ def query_llm_function_decision(api_url, model_name, prompt, stream=True):
 def query_llm_marked_response(api_url, model_name, prompt, stream=True):
     """
     Query the LLM and return a generator of text chunks.
-    Logging added to debug streaming issues.
+    Parses JSON chunks to extract the 'response' field and yields it.
     """
     logging.info("query_llm_marked_response: Preparing to send request for streamed response.")
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": prompt, "stream": stream}
     logging.debug(f"query_llm_marked_response: Payload: {payload}")
 
-    with requests.post(api_url, headers=headers, json=payload, stream=stream) as response:
-        logging.info(f"query_llm_marked_response: LLM responded with status {response.status_code}")
-        response.raise_for_status()
-        chunk_count = 0
-        for chunk in response.iter_lines(decode_unicode=True):
-            if chunk:
-                chunk_count += 1
-                logging.debug(f"query_llm_marked_response: Chunk #{chunk_count}: {chunk[:100]}...")
-                yield chunk
-            else:
-                # It's possible to get empty chunks, log them
-                logging.debug("query_llm_marked_response: Received empty chunk.")
-        logging.info(f"query_llm_marked_response: Streaming ended after {chunk_count} chunks.")
+    try:
+        with requests.post(api_url, headers=headers, json=payload, stream=stream) as response:
+            logging.info(f"query_llm_marked_response: LLM responded with status {response.status_code}")
+            response.raise_for_status()
+            chunk_count = 0
+
+            for chunk in response.iter_lines(decode_unicode=True):  # Decode bytes to strings
+                if chunk:
+                    chunk_count += 1
+                    logging.debug(f"query_llm_marked_response: Raw Chunk #{chunk_count}: {chunk[:100]}...")
+                    try:
+                        # Parse JSON chunk
+                        json_chunk = json.loads(chunk)
+                        if "response" in json_chunk:
+                            logging.debug(f"query_llm_marked_response: Extracted response: {json_chunk['response'][:100]}...")
+                            yield json_chunk["response"]  # Yield the 'response' field
+                        else:
+                            logging.warning("query_llm_marked_response: 'response' field missing in chunk.")
+                    except json.JSONDecodeError as e:
+                        logging.error(f"query_llm_marked_response: JSON decoding error: {e}")
+                        yield f"Error decoding chunk: {e}"
+                else:
+                    logging.debug("query_llm_marked_response: Received empty chunk.")
+
+            logging.info(f"query_llm_marked_response: Streaming ended after {chunk_count} chunks.")
+    except requests.RequestException as e:
+        logging.error(f"query_llm_marked_response: Request failed: {e}")
+        yield f"Error during request: {e}"
