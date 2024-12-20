@@ -27,14 +27,8 @@ async def handle_prompt(
     api_url: str = Form(None),
     model_name: str = Form(None)
 ):
-    # Override global settings if provided
-    from LLM_interface.query_llm import MODEL_NAME, API_URL
-    if api_url:
-        API_URL = api_url
-    if model_name:
-        MODEL_NAME = model_name
-
-    decision = llm_decision(user_prompt)
+    # Pass the api_url and model_name down to llm_decision
+    decision = llm_decision(user_prompt, api_url=api_url, model_name=model_name)
 
     if "stream_generator" in decision:
         logging.info("handle_prompt: Streaming response detected.")

@@ -1,8 +1,12 @@
 import json
 import requests
 import logging
+import os
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+
+load_dotenv()  # Load environment variables from .env if available
 
 AVAILABLE_FUNCTIONS = {
     "handle_path": "If the user only gives a path, detect if it is a file or folder.",
@@ -12,15 +16,19 @@ AVAILABLE_FUNCTIONS = {
     "general_question": "Answer general questions. Parameter should be /:/ to keep consistency."
 }
 
+# Try loading from config.json if exists
 CONFIG_PATH = "LLM_interface/config.json"
-try:
-    with open(CONFIG_PATH, "r") as config_file:
-        config = json.load(config_file)
-except FileNotFoundError:
-    raise Exception(f"Configuration file not found at {CONFIG_PATH}")
+config = {}
+if os.path.exists(CONFIG_PATH):
+    try:
+        with open(CONFIG_PATH, "r") as config_file:
+            config = json.load(config_file)
+    except Exception as e:
+        logging.warning(f"Could not load config.json: {e}")
 
-MODEL_NAME = config.get("model_name", "llama3.1:70b")
-API_URL = config.get("api_url", "http://localhost:11434/api/generate")
+# Fallback to environment variables if no config is provided
+MODEL_NAME = config.get("model_name", os.getenv("MODEL_NAME", "llama3.1:70b"))
+API_URL = config.get("api_url", os.getenv("API_URL", "http://localhost:11434/api/generate"))
 
 def preprocess_prompt_with_functions(user_prompt):
     system_directive = f"""
@@ -61,6 +69,12 @@ def process_streamed_responses(response):
     logging.info(f"process_streamed_responses: Total {chunk_count} chunks received.")
 
 def query_llm_function_decision(api_url, model_name, prompt, stream=True):
+    # If not provided, fallback to global
+    if not api_url:
+        api_url = API_URL
+    if not model_name:
+        model_name = MODEL_NAME
+
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": prompt, "stream": stream}
 
@@ -81,6 +95,12 @@ def query_llm_function_decision(api_url, model_name, prompt, stream=True):
             return data.get("response", "No response.")
 
 def query_llm_marked_response(api_url, model_name, prompt, stream=True):
+    # If not provided, fallback to global
+    if not api_url:
+        api_url = API_URL
+    if not model_name:
+        model_name = MODEL_NAME
+
     logging.info("query_llm_marked_response: Preparing to send request for streamed response.")
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": prompt, "stream": stream}

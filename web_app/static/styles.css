@@ -67,7 +67,7 @@ body {
     border-radius: 5px;
     color: #f1f1f1;
     font-family: monospace;
-    white-space: normal; /* Changed from pre-wrap to normal */
+    white-space: normal;
 }
 
 .message {
@@ -157,9 +157,6 @@ button:hover {
     background-color: #666;
 }
 
-/* Removed progress bar CSS */
-
-/* Modal Styles */
 .modal {
     position: fixed;
     top: 0;

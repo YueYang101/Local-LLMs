@@ -6,18 +6,16 @@ from PyPDF2 import PdfReader
 from LLM_interface.query_llm import (
     preprocess_prompt_with_functions,
     query_llm_function_decision,
-    API_URL,
-    MODEL_NAME,
     query_llm_marked_response
 )
 from Functions.local_formatter import LocalFormatter
 
-def llm_decision(user_prompt: str):
+def llm_decision(user_prompt: str, api_url: str = None, model_name: str = None):
     logging.info("llm_decision: Starting decision-making process.")
     enriched_prompt = preprocess_prompt_with_functions(user_prompt)
     logging.debug(f"llm_decision: Enriched prompt: {enriched_prompt}")
 
-    llm_response = query_llm_function_decision(API_URL, MODEL_NAME, enriched_prompt, stream=False)
+    llm_response = query_llm_function_decision(api_url, model_name, enriched_prompt, stream=False)
     logging.debug(f"llm_decision: Raw LLM Decision Response: {llm_response}")
 
     try:
@@ -40,7 +38,7 @@ def llm_decision(user_prompt: str):
             path = param.get("path", "")
 
             if func == "handle_path":
-                action_response = handle_path(path)
+                action_response = handle_path(path, api_url, model_name)
                 for action_func, action_param in zip(action_response.get("function", []), action_response.get("parameters", [])):
                     if action_func == "read_file":
                         results.append(read_file(**action_param))
@@ -56,7 +54,7 @@ def llm_decision(user_prompt: str):
                 results.append(list_folder(**param))
             elif func == "general_question":
                 # This should return a generator for streaming
-                gen = general_question(param.get("general_question", ""), stream=True)
+                gen = general_question(param.get("general_question", ""), api_url, model_name, stream=True)
                 results.append({"stream_generator": gen})
             else:
                 logging.warning(f"llm_decision: Unknown function '{func}'.")
@@ -103,7 +101,7 @@ def llm_decision(user_prompt: str):
             "detailed_info": {},
         }
 
-def handle_path(path):
+def handle_path(path, api_url, model_name):
     logging.info(f"handle_path: Handling path: {path}")
     if os.path.isfile(path):
         return {
@@ -150,9 +148,13 @@ def read_file(path: str):
             raise Exception("Failed to extract file content.")
 
         enriched_prompt = f"Explain the following content:\n\n{file_metadata['contents']}"
-        logging.debug("read_file: Enriched prompt prepared, calling general_question in stream mode.")
-        gen = general_question(enriched_prompt, stream=True)
-        return {"stream_generator": gen, "detailed_info": file_metadata}
+        logging.debug("read_file: Enriched prompt prepared. The explanation will be handled separately if needed.")
+        # Since read_file does not know api_url/model_name from this scope directly,
+        # we'll handle explanation separately if needed by the LLM decision logic.
+        return {
+            "plain_text_response": "File content read successfully. Use 'general_question' function to explain.",
+            "detailed_info": file_metadata
+        }
 
     except FileNotFoundError:
         logging.error(f"read_file: File not found at {path}")
@@ -266,35 +268,19 @@ def list_folder(path: str) -> dict:
             "Explain the overall purpose of the project, key components, and functionality."
         )
 
-        logging.debug("list_folder: Enriched prompt prepared, calling general_question in stream mode.")
-        gen = general_question(enriched_prompt, stream=True)
-
-        # We'll combine immediate_html and the generator into one streaming generator
-        immediate_html = (
-            "<h2>Folder Structure</h2>"
-            f"<pre>{html_tree_structure}</pre>"
-            "<h2>Explanation:</h2>"
-        )
-
-        def combined_generator():
-            # Yield folder structure first
-            yield immediate_html
-            # Then yield the explanation from the general_question generator
-            for chunk in gen:
-                yield chunk
-
+        # We'll let llm_decision handle calling general_question as needed
         return {
-            "stream_generator": combined_generator(),
-            "detailed_info": {"folder_structure": folder_structure}
+            "plain_text_response": "Folder structure read successfully. Use 'general_question' function to explain.",
+            "detailed_info": {"folder_structure": folder_structure, "explanation_prompt": enriched_prompt}
         }
 
     except Exception as e:
         logging.error(f"list_folder: Error processing folder: {e}")
         return {"html_response": f"<p>Error: {e}</p>", "detailed_info": {"error": str(e)}}
 
-def general_question(user_prompt, stream=False):
+def general_question(user_prompt, api_url, model_name, stream=False):
     logging.info(f"general_question: Handling prompt: {user_prompt}, stream={stream}")
-    response_chunks = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=stream)
+    response_chunks = query_llm_marked_response(api_url, model_name, user_prompt, stream=stream)
 
     if stream:
         formatter = LocalFormatter()

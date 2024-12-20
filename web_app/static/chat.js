@@ -65,8 +65,8 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
     chatWindow.appendChild(botMessage);
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
-    const api = localStorage.getItem('apiUrl') || 'http://localhost:11434/api/generate';
-    const model = localStorage.getItem('modelName') || 'llama3.1:70b';
+    const api = localStorage.getItem('apiUrl') || '';
+    const model = localStorage.getItem('modelName') || '';
 
     try {
         const response = await fetch("/handle-prompt/", {
@@ -147,6 +147,7 @@ window.addEventListener("error", (event) => {
 
 // Model/API selection logic
 let modelHistory = JSON.parse(localStorage.getItem('modelHistory')) || [];
+// modelHistory will store objects: { modelName: string, apiUrl: string }
 
 const changeModelButton = document.getElementById('change-model');
 const modelModal = document.getElementById('model-modal');
@@ -154,14 +155,45 @@ const closeModelButton = document.getElementById('close-modal');
 const saveModelSettingsButton = document.getElementById('save-model-settings');
 const modelHistoryList = document.getElementById('model-history');
 
+// Popular models
+const popularModels = [
+    { modelName: 'gpt-4o', hint: 'Enter API URL manually after selecting this.' },
+    { modelName: 'o1', hint: 'Enter API URL manually after selecting this.' }
+];
+
 function updateModelHistoryList() {
     modelHistoryList.innerHTML = '';
+    // Show last 3 used models
     modelHistory.slice(-3).forEach(m => {
         const li = document.createElement('li');
-        li.innerText = m;
-        li.onclick = () => {
-            document.getElementById('model-input').value = m;
+        const btn = document.createElement('button');
+        btn.innerText = `${m.modelName} (${m.apiUrl})`;
+        btn.classList.add('action-button');
+        btn.onclick = () => {
+            document.getElementById('model-input').value = m.modelName;
+            document.getElementById('api-input').value = m.apiUrl;
         };
+        li.appendChild(btn);
+        modelHistoryList.appendChild(li);
+    });
+
+    // Add a section for popular models
+    const popularHeader = document.createElement('p');
+    popularHeader.innerText = 'Popular Models:';
+    modelHistoryList.appendChild(popularHeader);
+
+    popularModels.forEach(pm => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.innerText = pm.modelName;
+        btn.classList.add('action-button');
+        btn.onclick = () => {
+            document.getElementById('model-input').value = pm.modelName;
+            // User can input API URL manually
+            // Show a hint?
+            alert(`Selected ${pm.modelName}. Please enter the API URL manually before saving.`);
+        };
+        li.appendChild(btn);
         modelHistoryList.appendChild(li);
     });
 }
@@ -181,10 +213,13 @@ saveModelSettingsButton.addEventListener('click', () => {
     if (apiInput && modelInput) {
         localStorage.setItem('apiUrl', apiInput);
         localStorage.setItem('modelName', modelInput);
-        if (!modelHistory.includes(modelInput)) {
-            modelHistory.push(modelInput);
+
+        const existing = modelHistory.find(m => m.modelName === modelInput && m.apiUrl === apiInput);
+        if (!existing) {
+            modelHistory.push({ modelName: modelInput, apiUrl: apiInput });
             localStorage.setItem('modelHistory', JSON.stringify(modelHistory));
         }
+
         modelModal.style.display = 'none';
         alert('Model & API updated successfully!');
     } else {
