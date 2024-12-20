@@ -60,12 +60,13 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
 
     chatWindow.appendChild(userMessage);
 
-    // Create a container for the bot's response
     const botMessage = document.createElement("div");
     botMessage.classList.add("message", "bot");
     chatWindow.appendChild(botMessage);
-
     chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    const api = localStorage.getItem('apiUrl') || 'http://localhost:11434/api/generate';
+    const model = localStorage.getItem('modelName') || 'llama3.1:70b';
 
     try {
         const response = await fetch("/handle-prompt/", {
@@ -73,16 +74,19 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
-            body: `user_prompt=${encodeURIComponent(inputValue)}`,
+            body: `user_prompt=${encodeURIComponent(inputValue)}&api_url=${encodeURIComponent(api)}&model_name=${encodeURIComponent(model)}`,
         });
 
         if (!response.ok) {
             throw new Error(`Server returned status ${response.status}`);
         }
 
-        // Stream the response word by word
+        // Initially set to empty
+        botMessage.innerHTML = "";
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
+        let isFirstChunk = true;
 
         while (true) {
             const { value, done } = await reader.read();
@@ -90,13 +94,21 @@ document.getElementById("chat-form").addEventListener("submit", async (event) =>
 
             if (value) {
                 const chunk = decoder.decode(value, { stream: true });
-                botMessage.innerHTML += chunk; // Append each word chunk to the message
-                chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll to the bottom
+                if (isFirstChunk) {
+                    // The first chunk might be "Thinking..."
+                    // Clear the bot message and then append
+                    botMessage.innerHTML = "";
+                    isFirstChunk = false;
+                }
+                // Append the chunk in a span for proper alignment
+                botMessage.innerHTML += `<span>${chunk}</span>`;
+                chatWindow.scrollTop = chatWindow.scrollHeight;
             }
         }
+
+        botMessage.innerHTML += "<br><span class='response-complete'>Response complete.</span>";
     } catch (error) {
         console.error("Error during fetch:", error);
-
         const errorMessage = document.createElement("div");
         errorMessage.classList.add("message", "bot");
         errorMessage.innerText = "Error: Unable to process your request.";
@@ -131,4 +143,51 @@ userInput.addEventListener("keydown", (event) => {
 
 window.addEventListener("error", (event) => {
     if (DEBUG_MODE) console.error("Uncaught error:", event.message);
+});
+
+// Model/API selection logic
+let modelHistory = JSON.parse(localStorage.getItem('modelHistory')) || [];
+
+const changeModelButton = document.getElementById('change-model');
+const modelModal = document.getElementById('model-modal');
+const closeModelButton = document.getElementById('close-modal');
+const saveModelSettingsButton = document.getElementById('save-model-settings');
+const modelHistoryList = document.getElementById('model-history');
+
+function updateModelHistoryList() {
+    modelHistoryList.innerHTML = '';
+    modelHistory.slice(-3).forEach(m => {
+        const li = document.createElement('li');
+        li.innerText = m;
+        li.onclick = () => {
+            document.getElementById('model-input').value = m;
+        };
+        modelHistoryList.appendChild(li);
+    });
+}
+
+changeModelButton.addEventListener('click', () => {
+    updateModelHistoryList();
+    modelModal.style.display = 'flex';
+});
+
+closeModelButton.addEventListener('click', () => {
+    modelModal.style.display = 'none';
+});
+
+saveModelSettingsButton.addEventListener('click', () => {
+    const apiInput = document.getElementById('api-input').value.trim();
+    const modelInput = document.getElementById('model-input').value.trim();
+    if (apiInput && modelInput) {
+        localStorage.setItem('apiUrl', apiInput);
+        localStorage.setItem('modelName', modelInput);
+        if (!modelHistory.includes(modelInput)) {
+            modelHistory.push(modelInput);
+            localStorage.setItem('modelHistory', JSON.stringify(modelHistory));
+        }
+        modelModal.style.display = 'none';
+        alert('Model & API updated successfully!');
+    } else {
+        alert('Please enter both API and Model');
+    }
 });

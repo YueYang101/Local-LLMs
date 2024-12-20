@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat with LLM</title>
-
-    <!-- Declare a version variable -->
     <script>
-        const version = "1.3.2"; // Update version here
+        const version = "1.3.3";
     </script>
-
-    <!-- Dynamically load the stylesheet with the version number -->
     <script>
         const styleSheetLink = document.createElement("link");
         styleSheetLink.rel = "stylesheet";
@@ -20,20 +16,17 @@
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <h2>Past Chats</h2>
             <div id="chat-list">
-                <!-- List of past chats -->
-                <button id="new-chat">+ New Chat</button>
+                <!-- Changed from + New Chat to Clear History -->
+                <button id="new-chat">Clear History</button>
+                <button id="change-model">Change Model/API</button>
             </div>
         </div>
 
-        <!-- Main Chat Window -->
         <div class="chat-container">
-            <div id="chat-window" class="chat-window">
-                <!-- Chat messages and responses will appear here -->
-            </div>
+            <div id="chat-window" class="chat-window"></div>
             <form id="chat-form">
                 <textarea 
                     id="user-input" 
@@ -46,17 +39,31 @@
         </div>
     </div>
 
-    <!-- Inline styles for plain text rendering and additional styles -->
+    <!-- Modal for changing Model/API -->
+    <div id="model-modal" class="modal">
+        <div class="modal-content">
+            <h3>Change Model & API</h3>
+            <label for="api-input">API URL:</label>
+            <input type="text" id="api-input" placeholder="e.g. http://localhost:11434/api/generate" />
+            <label for="model-input">Model Name:</label>
+            <input type="text" id="model-input" placeholder="e.g. llama3.1:70b" />
+            <p>Last used models:</p>
+            <ul id="model-history"></ul>
+            <button id="save-model-settings">Save</button>
+            <button id="close-modal">Cancel</button>
+        </div>
+    </div>
+
     <style>
         .response-container pre {
-            white-space: pre-wrap; /* Ensure long lines wrap properly */
-            font-family: monospace; /* Maintain plain text styling */
-            color: #f1f1f1; /* Match text color with chat window */
+            white-space: pre-wrap;
+            font-family: monospace;
+            color: #f1f1f1;
         }
 
         .message-actions {
             display: flex;
-            gap: 5px; /* Space between buttons */
+            gap: 5px;
             margin-top: 5px;
         }
 
@@ -75,7 +82,6 @@
         }
     </style>
 
-    <!-- Dynamically load the JavaScript file with the version number -->
     <script>
         const scriptTag = document.createElement("script");
         scriptTag.src = `/static/chat.js?v=${version}`;

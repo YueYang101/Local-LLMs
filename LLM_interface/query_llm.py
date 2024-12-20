@@ -52,10 +52,6 @@ def preprocess_prompt_with_functions(user_prompt):
     return f"{system_directive}\n\nUser Prompt: {user_prompt}"
 
 def process_streamed_responses(response):
-    """
-    Yields raw text chunks from the response stream.
-    Logs each chunk to help debug streaming issues.
-    """
     chunk_count = 0
     for chunk in response.iter_lines(decode_unicode=True):
         if chunk is not None:
@@ -85,10 +81,6 @@ def query_llm_function_decision(api_url, model_name, prompt, stream=True):
             return data.get("response", "No response.")
 
 def query_llm_marked_response(api_url, model_name, prompt, stream=True):
-    """
-    Query the LLM and return a generator of text chunks.
-    Parses JSON chunks to extract the 'response' field and yields it.
-    """
     logging.info("query_llm_marked_response: Preparing to send request for streamed response.")
     headers = {"Content-Type": "application/json"}
     payload = {"model": model_name, "prompt": prompt, "stream": stream}
@@ -100,16 +92,15 @@ def query_llm_marked_response(api_url, model_name, prompt, stream=True):
             response.raise_for_status()
             chunk_count = 0
 
-            for chunk in response.iter_lines(decode_unicode=True):  # Decode bytes to strings
+            for chunk in response.iter_lines(decode_unicode=True):
                 if chunk:
                     chunk_count += 1
                     logging.debug(f"query_llm_marked_response: Raw Chunk #{chunk_count}: {chunk[:100]}...")
                     try:
-                        # Parse JSON chunk
                         json_chunk = json.loads(chunk)
                         if "response" in json_chunk:
                             logging.debug(f"query_llm_marked_response: Extracted response: {json_chunk['response'][:100]}...")
-                            yield json_chunk["response"]  # Yield the 'response' field
+                            yield json_chunk["response"]
                         else:
                             logging.warning("query_llm_marked_response: 'response' field missing in chunk.")
                     except json.JSONDecodeError as e:

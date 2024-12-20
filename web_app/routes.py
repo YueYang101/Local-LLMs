@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Form
 from fastapi.responses import StreamingResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+import asyncio
 import logging
 from Functions.functions import llm_decision
 
@@ -20,10 +21,19 @@ async def home(request: Request):
     templates = Jinja2Templates(directory="web_app/templates")
     return templates.TemplateResponse("index.html", {"request": request})
 
-
 @router.post("/handle-prompt/", response_class=JSONResponse)
-async def handle_prompt(user_prompt: str = Form(...)):
-    logging.info(f"handle_prompt: Received user prompt: {user_prompt}")
+async def handle_prompt(
+    user_prompt: str = Form(...),
+    api_url: str = Form(None),
+    model_name: str = Form(None)
+):
+    # Override global settings if provided
+    from LLM_interface.query_llm import MODEL_NAME, API_URL
+    if api_url:
+        API_URL = api_url
+    if model_name:
+        MODEL_NAME = model_name
+
     decision = llm_decision(user_prompt)
 
     if "stream_generator" in decision:
@@ -31,11 +41,14 @@ async def handle_prompt(user_prompt: str = Form(...)):
 
         async def stream_response():
             try:
+                # Before actual chunks, yield "Thinking..."
+                yield "Thinking..."
+                # After "Thinking..." is shown, stream the actual response word by word
                 for chunk in decision["stream_generator"]:
-                    # Split the chunk into words
                     words = chunk.split()
                     for word in words:
-                        yield f"{word} "  # Send each word followed by a space
+                        yield f"{word} "
+                        await asyncio.sleep(0.01)
                 logging.info("handle_prompt: Finished streaming all chunks.")
             except Exception as e:
                 logging.error(f"handle_prompt: Error during streaming: {e}")

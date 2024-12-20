@@ -1,36 +1,33 @@
-/* General styles */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #1e1e2f; /* Dark grey background */
-    color: #f1f1f1; /* Light text color for contrast */
+    background-color: #1e1e2f; 
+    color: #f1f1f1;
     display: flex;
     height: 100vh;
 }
 
-/* Container layout */
 .container {
     display: flex;
     width: 100%;
     height: 100%;
 }
 
-/* Sidebar styles */
 .sidebar {
-    background-color: #2b2b3c; /* Slightly lighter dark grey for sidebar */
-    color: #f1f1f1; /* White text */
+    background-color: #2b2b3c;
+    color: #f1f1f1;
     width: 20%;
     padding: 20px;
     box-sizing: border-box;
     overflow-y: auto;
-    border-right: 1px solid #444; /* Subtle border for separation */
+    border-right: 1px solid #444;
 }
 
 .sidebar h2 {
     margin-top: 0;
     font-size: 1.5em;
-    color: #f1f1f1; /* White heading */
+    color: #f1f1f1;
 }
 
 #chat-list {
@@ -41,18 +38,17 @@ body {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
-    background-color: #444; /* Dark button */
-    color: #f1f1f1; /* Light text */
-    border: 1px solid #555; /* Subtle border */
+    background-color: #444;
+    color: #f1f1f1;
+    border: 1px solid #555;
     border-radius: 5px;
     cursor: pointer;
 }
 
 #chat-list button:hover {
-    background-color: #666; /* Lighter grey on hover */
+    background-color: #666;
 }
 
-/* Chat container styles */
 .chat-container {
     width: 80%;
     display: flex;
@@ -63,59 +59,55 @@ body {
 
 .chat-window {
     flex-grow: 1;
-    background-color: #262636; /* Slightly lighter grey for chat window */
+    background-color: #262636;
     border: 1px solid #444;
     margin: 10px 0;
     overflow-y: auto;
     padding: 10px;
     border-radius: 5px;
-    color: #f1f1f1; /* Light text color */
-    font-family: monospace; /* Monospace for consistent plain text display */
-    white-space: pre-wrap; /* Preserve newlines and whitespace */
+    color: #f1f1f1;
+    font-family: monospace;
+    white-space: normal; /* Changed from pre-wrap to normal */
 }
 
-/* Message styling */
 .message {
     margin-bottom: 10px;
     padding: 10px;
     border-radius: 8px;
-    position: relative; /* For absolute positioning of buttons */
+    position: relative; 
     transition: background-color 0.3s ease;
 }
 
 .message.user {
-    background-color: #3b3b4f; /* Darker shade for user */
+    background-color: #3b3b4f;
     text-align: right;
 }
 
 .message.bot {
-    background-color: #444; /* Dark grey for bot */
+    background-color: #444;
     text-align: left;
 }
 
-/* Message hover effect */
 .message:hover {
-    background-color: #3f3f4f; /* Slightly lighter grey */
+    background-color: #3f3f4f;
 }
 
-/* Dynamic action buttons for messages */
 .message-actions {
     position: absolute;
     top: 50%;
     right: 10px;
     transform: translateY(-50%);
-    display: none; /* Hidden by default */
-    gap: 5px; /* Space between buttons */
+    display: none;
+    gap: 5px;
 }
 
 .message:hover .message-actions {
-    display: flex; /* Show buttons when hovering over message */
+    display: flex;
 }
 
-/* Action button styles */
 .action-button {
     padding: 5px 10px;
-    background-color: #444; /* Match other button styles */
+    background-color: #444;
     color: #f1f1f1;
     border: none;
     border-radius: 5px;
@@ -125,10 +117,9 @@ body {
 }
 
 .action-button:hover {
-    background-color: #666; /* Lighter grey on hover */
+    background-color: #666;
 }
 
-/* Updated input field for dynamic resizing */
 form {
     display: flex;
     align-items: center;
@@ -140,72 +131,68 @@ textarea {
     flex-grow: 1;
     padding: 10px;
     margin-right: 10px;
-    border: 1px solid #555; /* Subtle border */
+    border: 1px solid #555;
     border-radius: 5px;
-    background-color: #f9f9f9; /* Light background for input field */
-    color: #1e1e2f; /* Dark text color for readability */
-    font-size: 16px; /* Larger font size for better readability */
-    resize: none; /* Disable manual resizing */
-    overflow-y: hidden; /* Prevent vertical overflow */
-    line-height: 24px; /* Explicit line height */
-    min-height: 24px; /* Consistent default height for 2 lines */
-    max-height: 200px; /* Limit the growth of the textarea */
+    background-color: #f9f9f9;
+    color: #1e1e2f;
+    font-size: 16px;
+    resize: none;
+    overflow-y: hidden;
+    line-height: 24px;
+    min-height: 24px;
+    max-height: 200px;
 }
 
-/* Submit button styling */
 button {
-    padding: 10px; /* Match the input field height */
-    background-color: #444; /* Match button styles */
+    padding: 10px;
+    background-color: #444;
     color: #f1f1f1;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px; /* Match input field font size */
+    font-size: 16px;
 }
 
 button:hover {
-    background-color: #666; /* Lighter grey on hover */
+    background-color: #666;
 }
 
-/* Progress bar styling */
-.progress-bar-container {
+/* Removed progress bar CSS */
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    margin: 10px 0;
-    background-color: #1e1e2f; /* Match background color */
-    border: 1px solid #444; /* Subtle border */
-    border-radius: 4px;
-    height: 10px;
-    overflow: hidden;
-}
-
-.progress-bar {
     height: 100%;
-    width: 0;
-    background-color: #5cb85c; /* Green for progress */
-    animation: progressBarAnimation 2s linear infinite;
+    background-color: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
 }
 
-@keyframes progressBarAnimation {
-    0% {
-        width: 0%;
-    }
-    50% {
-        width: 50%;
-    }
-    100% {
-        width: 100%;
-    }
+.modal-content {
+    background-color: #2b2b3c;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    color: #f1f1f1;
 }
 
-/* Plain text response container */
 .response-container {
-    background-color: #1e1e2f; /* Dark background */
-    border: 1px solid #444; /* Subtle border */
+    background-color: #1e1e2f;
+    border: 1px solid #444;
     border-radius: 5px;
     margin: 10px 0;
     padding: 10px;
-    color: #f1f1f1; /* Light text color */
-    font-family: monospace; /* Monospace for plain text display */
-    white-space: pre-wrap; /* Preserve formatting for plain text */
-    overflow-x: auto; /* Allow horizontal scrolling for long lines */
+    color: #f1f1f1;
+    font-family: monospace;
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
+.response-complete {
+    color: #ccc;
+    font-size: 0.9em;
 }

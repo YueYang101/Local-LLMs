@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from docx import Document
-import PyPDF2
+from PyPDF2 import PdfReader
 from LLM_interface.query_llm import (
     preprocess_prompt_with_functions,
     query_llm_function_decision,
@@ -10,8 +10,6 @@ from LLM_interface.query_llm import (
     MODEL_NAME,
     query_llm_marked_response
 )
-from PyPDF2 import PdfReader
-import docx
 from Functions.local_formatter import LocalFormatter
 
 def llm_decision(user_prompt: str):
@@ -200,7 +198,7 @@ def write_file(path: str, content: str):
 def list_folder(path: str) -> dict:
     logging.info(f"list_folder: Listing folder at path: {path}")
     import os
-    from PyPDF2 import PdfReader
+    from html import escape
 
     def read_file_content(file_path: str) -> str:
         try:
@@ -224,27 +222,33 @@ def list_folder(path: str) -> dict:
     def build_tree_and_content(path, level=0):
         indent = "    " * level
         tree_prefix = f"{indent}├── "
+        html_indent = "&nbsp;&nbsp;&nbsp;&nbsp;" * level
         plain_text_structure = ""
+        html_tree_structure = ""
         aggregated_content = ""
 
         if os.path.isdir(path):
             dir_name = os.path.basename(path)
             plain_text_structure += f"{tree_prefix}{dir_name}/\n"
+            html_tree_structure += f"{html_indent}<strong>{escape(dir_name)}/</strong><br>"
             for item in sorted(os.listdir(path)):
                 if item.startswith('.') or item == "__pycache__":
                     continue
                 item_path = os.path.join(path, item)
-                sub_plain, sub_content = build_tree_and_content(item_path, level + 1)
+                sub_plain, sub_html, sub_content = build_tree_and_content(item_path, level + 1)
                 plain_text_structure += sub_plain
+                html_tree_structure += sub_html
                 aggregated_content += sub_content
         else:
             file_name = os.path.basename(path)
             plain_text_structure += f"{tree_prefix}{file_name}\n"
+            html_tree_structure += f"{html_indent}{escape(file_name)}<br>"
             file_content = read_file_content(path)
             aggregated_content += f"\n# {file_name}\n{file_content}\n"
 
-        return plain_text_structure, aggregated_content
+        return plain_text_structure, html_tree_structure, aggregated_content
 
+    # Path validation
     if not os.path.exists(path):
         logging.error("list_folder: Path does not exist.")
         return {"html_response": "<p>Error: Path does not exist.</p>", "detailed_info": {"error": "Path does not exist"}}
@@ -253,7 +257,9 @@ def list_folder(path: str) -> dict:
         return {"html_response": "<p>Error: Path is not a folder.</p>", "detailed_info": {"error": "Path is not a folder"}}
 
     try:
-        folder_structure, aggregated_content = build_tree_and_content(path)
+        folder_structure, html_tree_structure, aggregated_content = build_tree_and_content(path)
+
+        # Prepare the prompt for explanation
         enriched_prompt = (
             f"Here is the folder structure of a programming project:\n\n{folder_structure}\n\n"
             f"Below are the contents of the files:\n{aggregated_content}\n\n"
@@ -262,20 +268,31 @@ def list_folder(path: str) -> dict:
 
         logging.debug("list_folder: Enriched prompt prepared, calling general_question in stream mode.")
         gen = general_question(enriched_prompt, stream=True)
-        return {"stream_generator": gen, "detailed_info": {"folder_structure": folder_structure}}
+
+        # We'll combine immediate_html and the generator into one streaming generator
+        immediate_html = (
+            "<h2>Folder Structure</h2>"
+            f"<pre>{html_tree_structure}</pre>"
+            "<h2>Explanation:</h2>"
+        )
+
+        def combined_generator():
+            # Yield folder structure first
+            yield immediate_html
+            # Then yield the explanation from the general_question generator
+            for chunk in gen:
+                yield chunk
+
+        return {
+            "stream_generator": combined_generator(),
+            "detailed_info": {"folder_structure": folder_structure}
+        }
 
     except Exception as e:
         logging.error(f"list_folder: Error processing folder: {e}")
         return {"html_response": f"<p>Error: {e}</p>", "detailed_info": {"error": str(e)}}
 
-from Functions.local_formatter import LocalFormatter
-import logging
-
 def general_question(user_prompt, stream=False):
-    """
-    Handles general questions.
-    Processes chunks from LLM incrementally, formats them, and yields HTML.
-    """
     logging.info(f"general_question: Handling prompt: {user_prompt}, stream={stream}")
     response_chunks = query_llm_marked_response(API_URL, MODEL_NAME, user_prompt, stream=stream)
 
@@ -286,11 +303,10 @@ def general_question(user_prompt, stream=False):
             for chunk in response_chunks:
                 chunk_index += 1
                 logging.debug(f"general_question: Received chunk #{chunk_index}: {chunk[:100]}...")
-                html = formatter.feed_text(chunk)  # Process the extracted response content
+                html = formatter.feed_text(chunk)
                 if html:
                     logging.debug(f"general_question: Yielding formatted HTML chunk of length {len(html)}.")
                     yield html
-            # Finalize formatting
             final_html = formatter.close()
             if final_html:
                 logging.debug("general_question: Yielding final formatted HTML after close.")
@@ -301,11 +317,10 @@ def general_question(user_prompt, stream=False):
     else:
         all_text = ""
         for chunk in response_chunks:
-            all_text += chunk  # Accumulate all response content
+            all_text += chunk
         formatter = LocalFormatter()
         html = formatter.feed_text(all_text)
         html += formatter.close()
-        logging.debug("general_question: Returning final HTML response.")
         return {
             "html_response": html,
             "detailed_info": {"type": "general_question", "prompt": user_prompt},
